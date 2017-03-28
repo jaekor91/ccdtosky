@@ -201,7 +201,8 @@ xyz3_ccd = radec2xyz(ra3,dec3)
 # Compute the normal vectors. The idea here is that given four normal vectors that 
 # are the results of cross-producting (xyz1,xyz0), (0,3), (3,2), (2,1) in that order, 
 # we can simply dot prodcut with normal vectors represented by healpix center.
-# TODO: Check the cross product implementation. double.
+# The subtraction is done for numerically stability. Members of n0_ccd-n_pix 
+# are quite similar.
 n0_ccd  = np.cross(xyz1_ccd-xyz0_ccd, xyz0_ccd)
 n1_ccd  = np.cross(xyz0_ccd-xyz3_ccd, xyz3_ccd)
 n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
@@ -220,8 +221,6 @@ start = time.time()
 n_pix = xyz_pix[idx_pix]
 
 # Test whether the pixel center is within each of the matched CCD
-# The subtraction of the kind "n0_ccd-n_pix" is done for numerically stability.
-# Members of n0_ccd-n_pix are quite similar.
 ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
                                vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
                                vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
@@ -238,7 +237,6 @@ idx_pix_inside_uniq = np.unique(idx_pix_inside)
 num_pix_inside_uniq = idx_pix_inside_uniq.size
 print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
 print("\n")
-# TODO: Print number of matches total.
 
 
 
