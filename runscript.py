@@ -202,10 +202,10 @@ xyz3_ccd = radec2xyz(ra3,dec3)
 # are the results of cross-producting (xyz1,xyz0), (0,3), (3,2), (2,1) in that order, 
 # we can simply dot prodcut with normal vectors represented by healpix center.
 # TODO: Check the cross product implementation. double.
-n0_ccd  = np.cross(xyz1_ccd, xyz0_ccd)
-n1_ccd  = np.cross(xyz0_ccd, xyz3_ccd)
-n2_ccd  = np.cross(xyz3_ccd, xyz2_ccd)
-n3_ccd  = np.cross(xyz2_ccd, xyz1_ccd)
+n0_ccd  = np.cross(xyz1_ccd-xyz0_ccd, xyz0_ccd)
+n1_ccd  = np.cross(xyz0_ccd-xyz3_ccd, xyz3_ccd)
+n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
+n3_ccd  = np.cross(xyz2_ccd-xyz1_ccd, xyz1_ccd)
 
 # Create x,y,z vector version of healpix centers.
 xyz_pix = np.asarray(c_pix.cartesian.xyz).T
