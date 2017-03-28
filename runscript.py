@@ -220,10 +220,12 @@ start = time.time()
 n_pix = xyz_pix[idx_pix]
 
 # Test whether the pixel center is within each of the matched CCD
-ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
+# The subtraction of the kind "n0_ccd-n_pix" is done for numerically stability.
+# Members of n0_ccd-n_pix are quite similar.
+ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd]-n_pix,n_pix)>0, 
+                               vectorized_dot(n1_ccd[idx_ccd]-n_pix,n_pix)>0, 
+                               vectorized_dot(n2_ccd[idx_ccd]-n_pix,n_pix)>0, 
+                               vectorized_dot(n3_ccd[idx_ccd]-n_pix,n_pix)>0))
 
 # Trimming the mapping.
 idx_pix_inside = idx_pix[ibool]
