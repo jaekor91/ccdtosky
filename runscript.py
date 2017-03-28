@@ -220,10 +220,12 @@ start = time.time()
 n_pix = xyz_pix[idx_pix]
 
 # Test whether the pixel center is within each of the matched CCD
-ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
+# The subtraction of the kind "n0_ccd-n_pix" is done for numerically stability.
+# Members of n0_ccd-n_pix are quite similar.
+ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd]-n_pix,n_pix)>0, 
+                               vectorized_dot(n1_ccd[idx_ccd]-n_pix,n_pix)>0, 
+                               vectorized_dot(n2_ccd[idx_ccd]-n_pix,n_pix)>0, 
+                               vectorized_dot(n3_ccd[idx_ccd]-n_pix,n_pix)>0))
 
 # Trimming the mapping.
 idx_pix_inside = idx_pix[ibool]
@@ -305,35 +307,7 @@ if num_cores == 1:
 	                output_arr[eb_dict[(e,b)]][cnt] = compute_stat(e, data_ccd, galdepth_ivar, idx_ccd_matched_b)
 	dt6 = time.time()-start
 	print("Finished. Time elapsed: %.3E sec"% (dt6))
-else:
-	# Parallel version. The function belows here because it uses output_arr.
-	print("Computing parallel-y. Attempting to use %d cores" %num_cores)
-	print("Currently, dysfunctional.")
-	# def compute_stat_parallel(i):
-	#     idx_ccd_matched = idx_ccd_inside[np.where(idx_pix_inside==i)[0]]
 
-	#     # For each filter, find the corresponding part of the pix to ccd map.
-	#     for b in filter_types:
-	#         idx_ccd_matched_b = idx_ccd_matched[np.where(ccd_filter[idx_ccd_matched] == b)]
-	#         # If there was no ccd found, assign np.nan to all the quantities.
-	#         if idx_ccd_matched_b.size == 0:
-	#             for e in templates:
-	#                 output_arr[eb_dict[(e,b)]][cnt] = np.nan       
-	#         else:
-	#             # For each quantity of interest (iterating through templates), compute the quantity as specified 
-	#             # and place the computed quantities into the rec array.                     
-	#             for e in templates:
-	#                 output_arr[eb_dict[(e,b)]][cnt] = compute_stat(e, data_ccd, galdepth_ivar, idx_ccd_matched_b)    
-	
-	# # Creating pool of workers.	    
-	# pool = Pool(num_cores) # Creating max threads. 
-
-	# print("Start computing statistics.")
-	# start = time.time()
-	# pool.map(compute_stat_parallel,idx_pix_inside_uniq)
-	# pool.close()		
-	# dt6 = time.time()-start
-	# print("Finished. Time elapsed: %.3E sec"% (dt6))
 
 # At the moment, saved in numpy binary file.
 np.save("".join([out_directory, "output_arr"]), output_arr, allow_pickle=False)
