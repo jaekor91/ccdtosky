@@ -222,10 +222,10 @@ n_pix = xyz_pix[idx_pix]
 # Test whether the pixel center is within each of the matched CCD
 # The subtraction of the kind "n0_ccd-n_pix" is done for numerically stability.
 # Members of n0_ccd-n_pix are quite similar.
-ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd]-n_pix,n_pix)>0, 
-                               vectorized_dot(n1_ccd[idx_ccd]-n_pix,n_pix)>0, 
-                               vectorized_dot(n2_ccd[idx_ccd]-n_pix,n_pix)>0, 
-                               vectorized_dot(n3_ccd[idx_ccd]-n_pix,n_pix)>0))
+ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
+                               vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
+                               vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
+                               vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
 
 # Trimming the mapping.
 idx_pix_inside = idx_pix[ibool]
@@ -275,13 +275,13 @@ ccd_filter = data_ccd["filter"]
 eb_dict = template_filter_dict(templates, filter_types)
 
 
-# Both serial and paraellel version is provided in case the parallel version does not work. 
+# Both serial and paraellel version are provided in case the parallel version does not work. 
 # The general scheme is as follows:
 # - For each pix in idx_pix_inside_uniq, find the corresponding ccd's using (idx_pix_inside, idx_ccd_inside).
 # - For each filter, find the corresponding part of the pix to ccd map.
 # - If there was no ccd found, assign np.nan to all the quantities.
 # - For each quantity of interest (iterating through templates), compute the quantity as specified.
-# - Place the computed quantities into the rec array. 
+# - Place the computed quantities into the rec array.
 
 if num_cores == 1: 
 	# Version: Serial. 
