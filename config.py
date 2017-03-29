@@ -55,13 +55,24 @@ templates = [("Nexp","none", "sum"),
 # - "weight": str. There are two choices. "none" does not use any kind of weighting scheme. 
 #	If "galdepth_ivar", then galactic depth inverse variance in invesre nanomaggies square 
 #	is used as weights.   
-# - operation: str.
-#     - "mean": If "weight" = "galdepth_ivar", then weighted average is computed.
-#     - "min"
-#     - "max"
-#     - "median"
-#     - "sum"
-#     - "std": numpy.std
+# - operation: str. The following statistics are available:
+#     - "mean": Non-weighted average is computed. 
+#				Compute the mean of values for points within each bin. Empty bins will be 
+#				represented by NaN.
+# 	  - "median": compute the median of values for points within each bin.
+#		 		Empty bins will be represented by NaN.
+# 	  - "count": compute the count of points within each bin. This is identical
+#		 		to an unweighted histogram. values array is not referenced.
+# 	  - "sum": compute the sum of values for points within each bin. This is
+#		 		identical to a weighted histogram.
+# 	  - "min": compute the minimum of values for points within each bin.
+#				 Empty bins will be represented by NaN.
+# 	  - "max": compute the maximum of values for point within each bin. 
+#				Empty bins will be represented by NaN.
+# 	  - function: a user-defined function which takes a 1D array of values, 
+#				and outputs a single numerical statistic. This function will 
+#				be called on the values in each bin. Empty bins will be represented 
+#				by function([]), or NaN if this returns an error.
 #  
 # Note that the output quantity is computed for each band seperately ("g", "r" and "z"). 
 # The output recarray will have 3*n+3 columns, where n is the number of quantities specified. 

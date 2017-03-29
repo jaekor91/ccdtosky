@@ -35,12 +35,8 @@
 # TODO: When the program runs, first check whether the inputs are reasonable.
 # TODO: Some of these quantities must be processed before proceeding. Change to step 2.
 # TODO: Ask Dustin which columns are appropriate.
-# TODO: What to do with galdepth or psfdepth with zero?
+# TODO: What to do with galdepth or psfdepth with zero? Or if the values don't make sense?
 # TODO: Memory issue. Filesystem level solution.
-# TODO: Currently, only implementing histogramming for simple count, average,
-#		weighted average.
-#		And then think about Min/Max and other things. Would it be quick to
-#		use numba to make this faster?
 # TODO: 
 
 
