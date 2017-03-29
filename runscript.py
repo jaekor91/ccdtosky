@@ -50,6 +50,7 @@ import astropy.io.fits as fits
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import search_around_sky
 from astropy import units as u
+import scipy.stats as stats
 import time
 from multiprocessing import Pool
 # module of ccdtosky
@@ -232,7 +233,7 @@ print("\n")
 
 
 ################################################################################
-# - 6. Compute the stats: TODO
+# - 6. Compute the stats: See above.
 print("6. Compute the stats")
 print("Allocate memory for the output array.")
 # Create the output recarray as a placeholder.
@@ -261,54 +262,55 @@ ccd_filter = data_ccd["filter"]
 eb_dict = template_filter_dict(templates, filter_types)
 
 
-# Version: Histogramming. Limited to simple sum and weighted mean for now (3/28/2017).
-# The code is written as explicitly as possible without defining any 
-# new function because that way it is easier to see how to further
-# improve the computation for memory and speend in the near future.
-# General approach:
-# - For each band, select (e.g., via a boolean vector i_b) the part of 
-# idx_pix_inside and idx_ccd_inside that contain information corresponding
-# to the band.
-# - For all the quantities requested, create a histogram with the argument
-# idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5), and weight=data_ccd["prop"][idx_pix_inside[i_b]].
-# If "weight" = "galdepth_ivar", then weights=galdepth_ivar[i_b]*property[i_b]. 
-# - Properly store away the variable.
-# WARNING: The code below is wrong! Sum of galdepth_ivar should be calculated 
-# on individual band level, not together.
-
+# Version: Using scipy binned_statistic
 print("Start computing statistics.")
 start = time.time()
-# Denominator for the statistics computed below.
-# For simple sum:
-hist_denom, _ = np.histogram(idx_pix_inside, bins=np.arange(-0.5, num_pix+0.5, 1))
-# For galdepth_ivar average:
-hist_denom_galdepth_ivar, _ = np.histogram(idx_pix_inside, bins=np.arange(-0.5, num_pix+0.5, 1), weights=galdepth_ivar[idx_ccd_inside])
 
 # For each filter
 for b in filter_types:
-    print("Computation for %s-band quantities started."%b)
+    print("Computation for %s-band quantities started."%b)	
     # Create a band mask
     i_b = data_ccd["filter"][idx_ccd_inside]==b
+
+    # Sum of galdepth_ivar per bin
+    # For galdepth_ivar average:
+    hist_denom_galdepth_ivar, _, _ = stats.binned_statistic(idx_pix_inside[i_b], galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+
     # For each quantity requsted
     for e in templates:
-        print(e[0])
-        if e[0] == "Nexp": # If the quantity of interest is not the number of exposure.
-            output_arr[eb_dict[(e,b)]] = hist_denom[idx_pix_inside_uniq]
+        print(eb_dict[(e,b)])    	
+        if (e[1] == "none") or (e[2] in ["min", "max", "median"]): 
+            # If the weight scheme is none or any of the above functions were chosen.
+            weight = False
         else:
-            if e[1] == "none": # If the weight scheme is none
-                hist_num, _ = np.histogram(idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5, 1), weights=data_ccd[e[0]][idx_ccd_inside[i_b]])
-                output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom[idx_pix_inside_uniq])
-            elif e[1] == "galdepth_ivar": # If the weight scheme is galdepth_ivar
-                hist_num, _ = np.histogram(idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5, 1), weights=data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]])
-                output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
+            weight = True
+        
+        # If the quantity requested is Nexp
+        if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
+            hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], np.ones_like([idx_ccd_inside[i_b]]), statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))            
+            output_arr[eb_dict[(e,b)]] = hist_num[0][idx_pix_inside_uniq]            
+        else:
+            # If the operation asked for is mean
+            if e[2] == "mean": 
+                if weight: # weight is true, apply the weights when computing the average.
+                    hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+                    output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
+                else: # weight is FALSE, then just use "mean" option. 
+                    hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = "mean", bins=np.arange(-0.5, num_pix+1.5, 1))
+                    output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+            # For all other operations.
+            else:
+                hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = e[2], bins=np.arange(-0.5, num_pix+1.5, 1))
+                output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
     print("Computation for %s-band quantities ended.\n"%b)    
-    
+                
 dt6 = time.time()-start
 print("Finished. Time elapsed: %.3E sec"% (dt6))
 # At the moment, saved in numpy binary file.
 np.save("".join([out_directory, "output_arr"]), output_arr, allow_pickle=False)
 print("output_arr is saved in %s." % out_directory)
 print("\n")
+
 
 
 ################################################################################
