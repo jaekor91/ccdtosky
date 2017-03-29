@@ -65,9 +65,15 @@ def gen_rec_dtype(templates):
     for e in templates:
         for b in filter_types:
             if callable(e[2]): # If the user passed the function
-                rec_dtype.append(("_".join([b,e[0],"userfunc"]),float))
+                if e[1]=="none":
+                    rec_dtype.append(("_".join([b,e[0],"userfunc"]),float))
+                else:
+                    rec_dtype.append(("_".join([b,e[0],"w","userfunc"]),float))                    
             else:
-                rec_dtype.append(("_".join([b,e[0],e[2]]),float))
+                if e[1]=="none":
+                    rec_dtype.append(("_".join([b,e[0],e[2]]),float))
+                else:
+                    rec_dtype.append(("_".join([b,e[0],"w",e[2]]),float))                    
     return rec_dtype
 
 
