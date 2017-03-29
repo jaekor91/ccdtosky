@@ -42,6 +42,8 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 import numpy as np
 
 templates = [("Nexp","none", "sum"),
+             ("airmass","galdepth_ivar", "min"),
+             ("airmass","none", "mean"),             
              ("airmass","galdepth_ivar", "mean"),
              ("ebv","galdepth_ivar", "mean"),
              ("seeing","galdepth_ivar", "mean"),

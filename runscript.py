@@ -25,7 +25,8 @@
 #	be done efficiently in cartesian represntation of ra/dec's as described 
 #	in the code below. The cartesian represntation is pre-computed. 
 #
-# - 6. Compute the stats: TODO
+# - 6. Compute the stats: The statistics specified by the user (e.g. min, max, mean)
+#	are computed via scipy.stats.binned_statistic function.
 #
 # - 7. Report times for various steps. 
 #
@@ -278,7 +279,7 @@ for b in filter_types:
 
     # For each quantity requsted
     for e in templates:
-        print(eb_dict[(e,b)])    	
+        start_e = time.time()
         if (e[1] == "none") or (e[2] in ["min", "max", "median"]): 
             # If the weight scheme is none or any of the above functions were chosen.
             weight = False
@@ -302,6 +303,7 @@ for b in filter_types:
             else:
                 hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = e[2], bins=np.arange(-0.5, num_pix+1.5, 1))
                 output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+        print(("Quantity: %s, Time taken: {:<1.3E} sec"%eb_dict[(e,b)]).format(time.time()-start_e))
     print("Computation for %s-band quantities ended.\n"%b)    
                 
 dt6 = time.time()-start
