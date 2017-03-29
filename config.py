@@ -7,15 +7,16 @@ faddress = "../data/ccd/ccds-annotated-decals.fits"
 # Output directory
 out_directory = "./"
 
-# Parallelization parameters for computing statistics
-num_cores = 1 # One by default. Non-negative integer. As an example, if you requested 8 cores, 
-            # then you should set this number to8.
+# This feature is current disabled.
+# # Parallelization parameters for computing statistics
+# num_cores = 1 # One by default. Non-negative integer. As an example, if you requested 8 cores, 
+#             # then you should set this number to8.
 
 # Search radius range for each HEALPix center.
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**9 # Recommend 2**11 for accurate computation. 
+Nside = 2**4 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -39,18 +40,12 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 # Quantities of interests: For any quantity that the user is interested in, 
 # user must specify a list of tuples (one per quantity) as in the following example.
 import numpy as np
-def func_nonsense(quantities, weights):
-    """
-    Dummy function for testing.
-    """
-    return np.sum(quantities*weights)
 
 templates = [("Nexp","none", "sum"),
              ("airmass","galdepth_ivar", "mean"),
              ("ebv","galdepth_ivar", "mean"),
              ("seeing","galdepth_ivar", "mean"),
-             ("avsky","galdepth_ivar", "mean"), # Is ADU to flux conversion necessary?
-             ("airmass","galdepth_ivar", func_nonsense)]
+             ("avsky","galdepth_ivar", "mean")]
 
 # More generally,
 #
@@ -60,10 +55,7 @@ templates = [("Nexp","none", "sum"),
 # - "weight": str. There are two choices. "none" does not use any kind of weighting scheme. 
 #	If "galdepth_ivar", then galactic depth inverse variance in invesre nanomaggies square 
 #	is used as weights.   
-# - operation: str or Python function. If not one of the operations below, then operation 
-#	must be a Python function (e.g., func_nonsense) that takes exactly one (if "weight" = "none") 
-#	or two (if "weight" = "galdepth_ivar") arguments. The function must be defined within the 
-#	config file.
+# - operation: str.
 #     - "mean": If "weight" = "galdepth_ivar", then weighted average is computed.
 #     - "min"
 #     - "max"

@@ -19,31 +19,26 @@
 # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
 #	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
 #	The output is idx_pix, idx_ccd that gives indices of all matches.
-# 	
+# 	`
 # - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
 #	from here on), find a set of ccds that it actually belongs to. This can 
 #	be done efficiently in cartesian represntation of ra/dec's as described 
 #	in the code below. The cartesian represntation is pre-computed. 
 #
-# - 6. Compute the stats: For each HEALPix pixel, compute the desired statistics.
-#	Both serial and paraellel version is provided in case the parallel version
-#	does not work. "num_cores" variable in config.py should be set to be equal
-#	to the number of cores available.
+# - 6. Compute the stats: TODO
 #
 # - 7. Report times for various steps. 
 #
 # - Plots: Currently not supported.
 #
 # TODO: Make the program parallel.
-# TODO: It doesn't quite make sense that the user defined function for 
-# statistics takes weights unless we also specify a way to compute weights.
 # TODO: When the program runs, first check whether the inputs are reasonable.
 # TODO: Some of these quantities must be processed before proceeding. Change to step 2.
-# TODO: ccd- good/bad, and wrong column
+# TODO: Ask Dustin which columns are appropriate.
 # TODO: What to do with galdepth or psfdepth with zero?
-# TODO: Change the program so that the quantities requested are pre-extracted and handled?
 # TODO: Memory issue. Filesystem level solution.
-# TODO: Let's think about the simple first. Histogramming for sum and average. 
+# TODO: Currently, only implementing histogramming for simple count, average,
+#		weighted average.
 #		And then think about Min/Max and other things. Would it be quick to
 #		use numba to make this faster?
 # TODO: 
@@ -241,10 +236,7 @@ print("\n")
 
 
 ################################################################################
-# - 6. Compute the stats: For each HEALPix pixel, compute the desired statistics.
-#	Both serial and paraellel version is provided in case the parallel version
-#	does not work. "num_cores" variable in config.py should be set to be equal
-#	to the number of cores available.
+# - 6. Compute the stats: TODO
 print("6. Compute the stats")
 print("Allocate memory for the output array.")
 # Create the output recarray as a placeholder.
