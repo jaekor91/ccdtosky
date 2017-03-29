@@ -65,15 +65,16 @@ def gen_rec_dtype(templates):
     for e in templates:
         for b in filter_types:
             if callable(e[2]): # If the user passed the function
-                if e[1]=="none":
-                    rec_dtype.append(("_".join([b,e[0],"userfunc"]),float))
-                else:
-                    rec_dtype.append(("_".join([b,e[0],"w","userfunc"]),float))                    
+                rec_dtype.append(("_".join([b,e[0],"userfunc"]),float))
             else:
                 if e[1]=="none":
                     rec_dtype.append(("_".join([b,e[0],e[2]]),float))
-                else:
-                    rec_dtype.append(("_".join([b,e[0],"w",e[2]]),float))                    
+                else: # If it's weigthed.
+                    if e[2]=="mean": # If the requested operation is a mean
+                        rec_dtype.append(("_".join([b,e[0],"w",e[2]]),float))
+                    else:
+                        rec_dtype.append(("_".join([b,e[0],e[2]]),float))
+                        
     return rec_dtype
 
 
@@ -88,7 +89,13 @@ def template_filter_dict(templates, filter_types):
             if callable(e[2]): # If the user passed the function
                 ptr = "_".join([b,e[0],"userfunc"])
             else:
-                ptr = "_".join([b,e[0],e[2]])
+                if e[1]=="none":
+                    ptr = "_".join([b,e[0],e[2]])
+                else: # If it's weigthed.
+                    if e[2]=="mean": # If the requested operation is a mean
+                        ptr = "_".join([b,e[0],"w",e[2]])
+                    else:
+                        ptr = "_".join([b,e[0],e[2]])
             eb_dict[(e,b)] = ptr
     return eb_dict
 
