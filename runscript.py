@@ -123,8 +123,7 @@ print("# ccds only partially good: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total-
 # Boolean vector for the intersection of the three conditions.
 ibool = np.logical_and.reduce((iphoto, iblacklist_ok, igood_region))
 num_ccd_used = np.sum(ibool)
-print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used\
-    ,(num_ccd_used)/num_ccds_total * 100))
+print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 
 # Overwritting data_ccd variable so as to use only the unmasked data.
 data_ccd = data_ccd[:][ibool]
@@ -328,7 +327,7 @@ print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
 print("{:<40s}: {:<1.3E} sec".format("Pre-compute xyz coordinates", dt5a))
 print("{:<40s}: {:<1.3E} sec".format("Trim the spherematch list", dt5b))
 print("{:<40s}: {:<1.3E} sec".format("Compute the statistics", dt6))
-print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used\
+print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
 print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
 
