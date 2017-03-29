@@ -51,24 +51,20 @@ templates = [("Nexp","none", "sum"),
 #
 # ("ccd_quantity", "weight", operation)
 #
-# - "ccd_quantity": str. For examlpe, "seeing", "airmass", "ebv", etc.   
+# - "ccd_quantity": str. For examlpe, "seeing", "airmass", "ebv", etc. If "Nexp" is used
+#					then unweighted sum is forced.
 # - "weight": str. There are two choices. "none" does not use any kind of weighting scheme. 
-#	If "galdepth_ivar", then galactic depth inverse variance in invesre nanomaggies square 
-#	is used as weights.   
+#			If "galdepth_ivar", then galactic depth inverse variance in invesre nanomaggies square 
+#			is used as weights.   
 # - operation: str. The following statistics are available:
-#     - "mean": Non-weighted average is computed. 
-#				Compute the mean of values for points within each bin. Empty bins will be 
-#				represented by NaN.
+#     - "mean": Compute the (weighted) mean of values for points within each bin. Empty bins will be 
+#				represented by NaN. 
 # 	  - "median": compute the median of values for points within each bin.
-#		 		Empty bins will be represented by NaN.
-# 	  - "count": compute the count of points within each bin. This is identical
-#		 		to an unweighted histogram. values array is not referenced.
-# 	  - "sum": compute the sum of values for points within each bin. This is
-#		 		identical to a weighted histogram.
+#		 		Empty bins will be represented by NaN. "weight" is ignored.
 # 	  - "min": compute the minimum of values for points within each bin.
-#				 Empty bins will be represented by NaN.
+#				 Empty bins will be represented by NaN. "weight" is ignored.
 # 	  - "max": compute the maximum of values for point within each bin. 
-#				Empty bins will be represented by NaN.
+#				Empty bins will be represented by NaN. "weight" is ignored.
 # 	  - function: a user-defined function which takes a 1D array of values, 
 #				and outputs a single numerical statistic. This function will 
 #				be called on the values in each bin. Empty bins will be represented 
