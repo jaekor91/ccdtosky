@@ -15,7 +15,7 @@ num_cores = 1 # One by default. Non-negative integer. As an example, if you requ
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**4 # Recommend 2**11 for accurate computation. 
+Nside = 2**9 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  

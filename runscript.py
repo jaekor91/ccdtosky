@@ -175,7 +175,8 @@ print("Finished. Time took: %.3E sec\n" %(dt4))
 print("In the remainder, work with only pixels that have matching ccd frames.")
 idx_pix_uniq = np.unique(idx_pix) # Get the uniq set of pixels matchted.
 num_pix_uniq = idx_pix_uniq.size
-print("# pix that overlaps with imaged regions: %d (%2.2f pcnt)\n" %(num_pix_uniq, num_pix_uniq/num_pix*100))
+print("# pix that overlaps with imaged regions: %d (%2.2f pcnt)" %(num_pix_uniq, num_pix_uniq/num_pix*100))
+print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
 print("\n")
 
 
@@ -273,40 +274,45 @@ ccd_filter = data_ccd["filter"]
 eb_dict = template_filter_dict(templates, filter_types)
 
 
-# Both serial and paraellel version are provided in case the parallel version does not work. 
-# The general scheme is as follows:
-# - For each pix in idx_pix_inside_uniq, find the corresponding ccd's using (idx_pix_inside, idx_ccd_inside).
-# - For each filter, find the corresponding part of the pix to ccd map.
-# - If there was no ccd found, assign np.nan to all the quantities.
-# - For each quantity of interest (iterating through templates), compute the quantity as specified.
-# - Place the computed quantities into the rec array.
+# Version: Histogramming. Limited to simple sum and weighted mean for now (3/28/2017).
+# The code is written as explicitly as possible without defining any 
+# new function because that way it is easier to see how to further
+# improve the computation for memory and speend in the near future.
+# General approach:
+# - For each band, select (e.g., via a boolean vector i_b) the part of 
+# idx_pix_inside and idx_ccd_inside that contain information corresponding
+# to the band.
+# - For all the quantities requested, create a histogram with the argument
+# idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5), and weight=data_ccd["prop"][idx_pix_inside[i_b]].
+# If "weight" = "galdepth_ivar", then weights=galdepth_ivar[i_b]*property[i_b]. 
+# - Properly store away the variable.
 
-if num_cores == 1: 
-	# Version: Serial. 
-	print("Computing serially.")	
-	print("Start computing statistics.")
-	start = time.time()
-	# TODO: What to do with galdepth or psfdepth with zero??
-	for cnt,i in enumerate(idx_pix_inside_uniq):
-	    # Find corresponding ccd rows
-	    idx_ccd_matched = idx_ccd_inside[np.where(idx_pix_inside==i)[0]]
+print("Start computing statistics.")
+start = time.time()
+# Denominator for the statistics computed below.
+# For simple sum:
+hist_denom, _ = np.histogram(idx_pix_inside, bins=np.arange(-0.5, num_pix+0.5, 1))
+# For galdepth_ivar average:
+hist_denom_galdepth_ivar, _ = np.histogram(idx_pix_inside, bins=np.arange(-0.5, num_pix+0.5, 1), weights=galdepth_ivar[idx_ccd_inside])
 
-	    # For each filter, find the corresponding part of the pix to ccd map.
-	    for b in filter_types:
-	        idx_ccd_matched_b = idx_ccd_matched[np.where(ccd_filter[idx_ccd_matched] == b)]
-	        # If there was no ccd found, assign np.nan to all the quantities.
-	        if idx_ccd_matched_b.size == 0:
-	            for e in templates:
-	                output_arr[eb_dict[(e,b)]][cnt] = np.nan       
-	        else:
-	            # For each quantity of interest (iterating through templates), compute the quantity as specified 
-	            # and place the computed quantities into the rec array.                     
-	            for e in templates:
-	                output_arr[eb_dict[(e,b)]][cnt] = compute_stat(e, data_ccd, galdepth_ivar, idx_ccd_matched_b)
-	dt6 = time.time()-start
-	print("Finished. Time elapsed: %.3E sec"% (dt6))
-
-
+# For each filter
+for b in filter_types:
+    # Create a band mask
+    i_b = data_ccd["filter"][idx_ccd_inside]==b
+    # For each quantity requsted
+    for e in templates:
+        if e[0] == "Nexp": # If the quantity of interest is not the number of exposure.
+            output_arr[eb_dict[(e,b)]] = hist_denom[idx_pix_inside_uniq]
+        else:
+            if e[1] == "none": # If the weight scheme is none
+                hist_num, _ = np.histogram(idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5, 1), weights=data_ccd[e[0]][idx_ccd_inside[i_b]])
+                output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom[idx_pix_inside_uniq])
+            elif e[1] == "galdepth_ivar": # If the weight scheme is galdepth_ivar
+                hist_num, _ = np.histogram(idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5, 1), weights=data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]])
+                output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
+    
+dt6 = time.time()-start
+print("Finished. Time elapsed: %.3E sec"% (dt6))
 # At the moment, saved in numpy binary file.
 np.save("".join([out_directory, "output_arr"]), output_arr, allow_pickle=False)
 print("output_arr is saved in %s." % out_directory)
@@ -322,6 +328,10 @@ print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
 print("{:<40s}: {:<1.3E} sec".format("Pre-compute xyz coordinates", dt5a))
 print("{:<40s}: {:<1.3E} sec".format("Trim the spherematch list", dt5b))
 print("{:<40s}: {:<1.3E} sec".format("Compute the statistics", dt6))
+print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used\
+print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
+print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
+
 
 
 
