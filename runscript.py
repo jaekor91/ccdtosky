@@ -296,10 +296,12 @@ hist_denom_galdepth_ivar, _ = np.histogram(idx_pix_inside, bins=np.arange(-0.5, 
 
 # For each filter
 for b in filter_types:
+    print("Computation for %s-band quantities started."%b)
     # Create a band mask
     i_b = data_ccd["filter"][idx_ccd_inside]==b
     # For each quantity requsted
     for e in templates:
+        print(e[0])
         if e[0] == "Nexp": # If the quantity of interest is not the number of exposure.
             output_arr[eb_dict[(e,b)]] = hist_denom[idx_pix_inside_uniq]
         else:
@@ -309,6 +311,7 @@ for b in filter_types:
             elif e[1] == "galdepth_ivar": # If the weight scheme is galdepth_ivar
                 hist_num, _ = np.histogram(idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5, 1), weights=data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]])
                 output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
+    print("Computation for %s-band quantities ended.\n"%b)    
     
 dt6 = time.time()-start
 print("Finished. Time elapsed: %.3E sec"% (dt6))
