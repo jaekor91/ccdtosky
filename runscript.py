@@ -37,7 +37,7 @@
 # TODO: Ask Dustin which columns are appropriate.
 # TODO: What to do with galdepth or psfdepth with zero? Or if the values don't make sense?
 # TODO: Memory issue. Filesystem level solution.
-# TODO: 
+# TODO: If the user specifies a silly template operation, then print WARNING and sometimes abort.
 
 
 
@@ -273,6 +273,8 @@ eb_dict = template_filter_dict(templates, filter_types)
 # idx_pix_inside[i_b], bins=np.arange(-0.5, num_pix+0.5), and weight=data_ccd["prop"][idx_pix_inside[i_b]].
 # If "weight" = "galdepth_ivar", then weights=galdepth_ivar[i_b]*property[i_b]. 
 # - Properly store away the variable.
+# WARNING: The code below is wrong! Sum of galdepth_ivar should be calculated 
+# on individual band level, not together.
 
 print("Start computing statistics.")
 start = time.time()
