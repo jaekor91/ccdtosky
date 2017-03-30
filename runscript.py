@@ -32,12 +32,10 @@
 #
 # - Plots: Currently not supported.
 #
-# TODO: Make the program parallel.
 # TODO: When the program runs, first check whether the inputs are reasonable.
 # TODO: Some of these quantities must be processed before proceeding. Change to step 2.
 # TODO: Ask Dustin which columns are appropriate.
 # TODO: What to do with galdepth or psfdepth with zero? Or if the values don't make sense?
-# TODO: Memory issue. Filesystem level solution.
 # TODO: If the user specifies a silly template operation, then print WARNING and sometimes abort.
 
 
