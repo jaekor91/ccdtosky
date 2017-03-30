@@ -7,9 +7,10 @@ faddress = "../data/ccd/ccds-annotated-decals.fits"
 # Output directory
 out_directory = "./"
 
-# Parallelization parameters for computing statistics
-num_cores = 1 # One by default. Non-negative integer. As an example, if you requested 8 cores, 
-            # then you should set this number to8.
+# This feature is current disabled.
+# # Parallelization parameters for computing statistics
+# num_cores = 1 # One by default. Non-negative integer. As an example, if you requested 8 cores, 
+#             # then you should set this number to8.
 
 # Search radius range for each HEALPix center.
 sepdeg = 0.336/2. 
@@ -39,37 +40,37 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 # Quantities of interests: For any quantity that the user is interested in, 
 # user must specify a list of tuples (one per quantity) as in the following example.
 import numpy as np
-def func_nonsense(quantities, weights):
-    """
-    Dummy function for testing.
-    """
-    return np.sum(quantities*weights)
 
 templates = [("Nexp","none", "sum"),
+             ("airmass","galdepth_ivar", "min"),
+             ("airmass","none", "mean"),             
              ("airmass","galdepth_ivar", "mean"),
              ("ebv","galdepth_ivar", "mean"),
              ("seeing","galdepth_ivar", "mean"),
-             ("avsky","galdepth_ivar", "mean"), # Is ADU to flux conversion necessary?
-             ("airmass","galdepth_ivar", func_nonsense)]
+             ("avsky","galdepth_ivar", "mean")]
 
 # More generally,
 #
 # ("ccd_quantity", "weight", operation)
 #
-# - "ccd_quantity": str. For examlpe, "seeing", "airmass", "ebv", etc.   
+# - "ccd_quantity": str. For examlpe, "seeing", "airmass", "ebv", etc. If "Nexp" is used
+#					then unweighted sum is forced.
 # - "weight": str. There are two choices. "none" does not use any kind of weighting scheme. 
-#	If "galdepth_ivar", then galactic depth inverse variance in invesre nanomaggies square 
-#	is used as weights.   
-# - operation: str or Python function. If not one of the operations below, then operation 
-#	must be a Python function (e.g., func_nonsense) that takes exactly one (if "weight" = "none") 
-#	or two (if "weight" = "galdepth_ivar") arguments. The function must be defined within the 
-#	config file.
-#     - "mean": If "weight" = "galdepth_ivar", then weighted average is computed.
-#     - "min"
-#     - "max"
-#     - "median"
-#     - "sum"
-#     - "std": numpy.std
+#			If "galdepth_ivar", then galactic depth inverse variance in invesre nanomaggies square 
+#			is used as weights.   
+# - operation: str. The following statistics are available:
+#     - "mean": Compute the (weighted) mean of values for points within each bin. Empty bins will be 
+#				represented by NaN. 
+# 	  - "median": compute the median of values for points within each bin.
+#		 		Empty bins will be represented by NaN. "weight" is ignored.
+# 	  - "min": compute the minimum of values for points within each bin.
+#				 Empty bins will be represented by NaN. "weight" is ignored.
+# 	  - "max": compute the maximum of values for point within each bin. 
+#				Empty bins will be represented by NaN. "weight" is ignored.
+# 	  - function: a user-defined function which takes a 1D array of values, 
+#				and outputs a single numerical statistic. This function will 
+#				be called on the values in each bin. Empty bins will be represented 
+#				by function([]), or NaN if this returns an error.
 #  
 # Note that the output quantity is computed for each band seperately ("g", "r" and "z"). 
 # The output recarray will have 3*n+3 columns, where n is the number of quantities specified. 
