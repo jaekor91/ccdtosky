@@ -1,4 +1,10 @@
-# Given the config file provided by the user, the present script produces the ::: Col num 79
+# Preface: This "runscript" is an extension of the "runscript.py". It performs
+# the same steps except that in order to get around the memory bound problem,
+# the problem is broken into "chunks" at various stages as described more in 
+# detail below (see the actual code not the top level overview). In addition,
+# use "config_serial_membound.py" file as the configuration file.
+# 
+# Given the config file provided by the user, the present script produces the
 # output array of interest. Here is a high-level overview of the program.
 # 
 # - 1. Check config.py: The runscript checks whether the config file is properly 
