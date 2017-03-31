@@ -1,8 +1,13 @@
-# Preface: This "runscript" is an extension of the "runscript.py". It performs
-# the same steps except that in order to get around the memory bound problem,
-# the problem is broken into "chunks" at various stages as described more in 
-# detail below (see the actual code not the top level overview). In addition,
-# use "config_serial_membound.py" file as the configuration file.
+# Preface: This "runscript" is branched from "runscript_serial_membound.py". 
+# Whereas "runscript_serial_membound.py" tried to solve the memory issue
+# that arises during spherematching in Step 4 by dividing the computation
+# in chunks and accumulate the results in a list, the present script takes
+# in two command line arguments that specify which "chunk" of the HEALPix
+# pixels to process. The two arguments specify the start and end index and
+# used for slicing. See the actual code for the description of the workflow.
+# For higher level explanation of steps, see below.
+# 
+# Use "config_run_per_chunk.py" file as the configuration file.
 # 
 # Given the config file provided by the user, the present script produces the
 # output array of interest. Here is a high-level overview of the program.
@@ -38,12 +43,9 @@
 #
 # - Plots: Currently not supported.
 #
-# TODO: Make the program parallel.
+<<<<<<< HEAD
 # TODO: When the program runs, first check whether the inputs are reasonable.
-# TODO: Some of these quantities must be processed before proceeding. Change to step 2.
-# TODO: Ask Dustin which columns are appropriate.
 # TODO: What to do with galdepth or psfdepth with zero? Or if the values don't make sense?
-# TODO: Memory issue. Filesystem level solution.
 # TODO: If the user specifies a silly template operation, then print WARNING and sometimes abort.
 
 
@@ -64,6 +66,9 @@ from multiprocessing import Pool
 from functions import *
 # read in configuration file
 from config_run_per_chunk import *
+# For reading in command line args
+import sys
+
 
 
 
@@ -75,6 +80,19 @@ from config_run_per_chunk import *
 print("1. Check config.py")
 start = time.time()
 dt1 = time.time()-start
+# Take the command line inputs for start and end indices for the HEALPix pixel
+# chunk to compute.
+chunk_start = int(sys.argv[1])
+chunk_end = int(sys.argv[2])
+num_pix_tot = hp.nside2npix(Nside)
+# If the chunk_end exceeds the bound, then set it the last possible value.
+if chunk_end > num_pix_tot:
+    chunk_end = num_pix_tot
+# If start is greater than end, then abort.
+if chunk_end <= chunk_start:
+    print("Error: Chunk start index is greater than end index.")
+    print("Exiting the sysmtem.")
+    sys.exit()
 print("Finished. Time elapsed: %.3E sec\n"% (dt1))
 print("\n")
 
@@ -125,7 +143,7 @@ num_ccd_used = np.sum(ibool)
 print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 
 # Overwritting data_ccd variable so as to use only the unmasked data.
-data_ccd = data_ccd[:][ibool]
+data_ccd = data_ccd[ibool]
 
 # The centers of ccd
 # print("\n")
@@ -144,9 +162,11 @@ print("\n")
 print("3. Create HEALPix grid")
 start = time.time()
 print("Nside chosen: %d"% Nside)
-num_pix = hp.nside2npix(Nside)
-print("# HEALPix pixels: %d"%num_pix)
-ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(num_pix), nest=NESTED, lonlat=True)) # lonlat=True, must.
+print("Total # HEALPix pixels: %d"%hp.nside2npix(Nside))
+num_pix = -(chunk_start-chunk_end) 
+print("# pixels computed: %d"%num_pix)
+print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
+ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(chunk_start, chunk_end), nest=NESTED, lonlat=True)) # lonlat=True, must.
 print("HEALPix pixels ra/dec computed.")
 
 ### For each healpix pixel position, finding ccd centers.
@@ -163,43 +183,30 @@ print("\n")
 # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
 #	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
 #	The output is idx_pix, idx_ccd that gives indices of all matches.
-#   The computation is performed in chunks with each chunk having hp.nside2npix(Nside)
-#   number of pixels, so as to reduce memory requirement. The first chunk
-#   is use to construct ccd kdTree (using the astropy function) which caches
-#   the tree for the remaining chunks. 
 print("4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees")
 print("Computing ccd to pix mapping based on their ra/dec's. (kD-tree)")
 start = time.time()
-num_pix_kdtree = hp.nside2npix(Nside_kdtree)
 
-# Dividing the work in chunk
-nchunks = int(num_pix/num_pix_kdtree)
-print("Number of chunks: %d"%nchunks)
-
-idx_pix_list = []
-idx_ccd_list = []
-for i in range(nchunks):
-    start_time_chunk = time.time()
-    chunk_start = i*num_pix_kdtree # Start index 
-    chunk_end = (i+1)*num_pix_kdtree # End index
-
-    # We make c_pix the first argument because we want the mapping to be sorted by it.
-    idx_pix_temp, idx_ccd_temp, _, _ = search_around_sky(c_pix[chunk_start:chunk_end], c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
-
-    # Append the temp variables to the lists, if the size is nonzero.
-    if idx_pix_temp.size > 0: 
-        idx_pix_list.append(idx_pix_temp+chunk_start)
-        idx_ccd_list.append(idx_ccd_temp)
-
-    # This may not work if there are chunks with no matches at all.
-    print("Computing chunk %d. Time took %.3E sec"%(i, time.time()-start_time_chunk))
-
-# Concatenating the chunks (which are NOT saved in files.)
-idx_pix = np.concatenate(idx_pix_list)
-idx_ccd = np.concatenate(idx_ccd_list)
+# We make c_pix the first argument because we want the mapping to be sorted by it.
+idx_pix, idx_ccd, _, _ = search_around_sky(c_pix, c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
 
 dt4 = time.time()-start 
 print("Finished. Time took: %.3E sec\n" %(dt4))
+
+# If the number of matches is zeros, then exit the program.
+if idx_pix.size == 0:
+    print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
+    print("Total # HEALpix pixels: %d" % num_pix_tot)
+    print("# pixels computed: %d"%num_pix)    
+    print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
+    print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
+    print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
+    print("{:<40s}: {:<1.3E} sec".format("Create HEALPix grid", dt3))
+    print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
+    print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
+    print("Skip the rest of the program and exit.")
+    sys.exit()
+
 print("In the remainder, work with only pixels that have matching ccd frames.")
 idx_pix_uniq = np.unique(idx_pix) # Get the uniq set of pixels matchted.
 num_pix_uniq = idx_pix_uniq.size
@@ -278,9 +285,10 @@ rec_dtype = gen_rec_dtype(templates)
 num_col = 3*len(templates)+3
 output_arr = np.recarray((num_pix_inside_uniq,),dtype=rec_dtype)
 
-# Overwrite for the HEALPix portion.
-output_arr["hpix_idx"] = idx_pix_inside_uniq
-output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq,nest=True,lonlat=True)
+# Overwrite for the HEALPix portion. Note the addition of chunk_start in order to
+# correct for the offset introduced in Step 4.
+output_arr["hpix_idx"] = idx_pix_inside_uniq+chunk_start
+output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq+chunk_start,nest=True,lonlat=True)
 
 # Filter types
 filter_types = ["g","r","z"]
@@ -345,7 +353,7 @@ for b in filter_types:
 dt6 = time.time()-start
 print("Finished. Time elapsed: %.3E sec"% (dt6))
 # At the moment, saved in numpy binary file.
-np.save("".join([out_directory, "output_arr"]), output_arr, allow_pickle=False)
+np.save("".join([out_directory, "output_arr_chunk%dthru%d"%(chunk_start, chunk_end)]), output_arr, allow_pickle=False)
 print("output_arr is saved in %s." % out_directory)
 print("\n")
 
@@ -353,6 +361,9 @@ print("\n")
 
 ################################################################################
 # - 7. Report times of various steps.
+print("Total # HEALpix pixels: %d" % num_pix_tot)
+print("# pixels computed: %d"%num_pix)
+print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
 print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
 print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
 print("{:<40s}: {:<1.3E} sec".format("Create HEALPix grid", dt3))
@@ -363,7 +374,7 @@ print("{:<40s}: {:<1.3E} sec".format("Compute the statistics", dt6))
 print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
 print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
-
+print("################################################################################\n\n\n")
 
 
 
