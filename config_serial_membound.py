@@ -17,7 +17,7 @@ out_directory = "./"
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**6 # Recommend 2**11 for accurate computation. 
+Nside = 2**9 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -38,7 +38,8 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 # Use Nside = 2^11. Pixel size is about 1 percent of the ccd size.
 
 # Number of pixels in each unit before matching to ccd_centers. 
-Nside_kdtree = 2**4
+Nside_kdtree = 2**7
+# WARNING: Must be in powers of 2.
 # A guide on the choice of Nside_kdtree:
 # The expected number of matches between the ccd centers and pixel centers 
 # can be estimated as follows: DESI covers about the third of the sky, so 
@@ -51,7 +52,7 @@ Nside_kdtree = 2**4
 # expect 54M = (50M * 6 * 0.18) matches. That's 108 MB of memory for numpy arrays
 # for match indices. For the compelete DESI imaging survey, we would instead
 # expect (as an upper bound) 330M = (50M * 20 * 1/3.) matches. That translates
-# to almost 1 GB of memory! Also, the kd-tree algorithm that the program implements
+# to almost 0.7 GB of memory. More importantly, the kd-tree algorithm that the program implements
 # requires RAM memory that grows proportinate to the number of input pixels.
 # For DR3, Nside = 2^11 case, the requirement is 6GB! So to be conservative
 # in memory requirement, we opt to divide the computation into several units 
@@ -59,8 +60,11 @@ Nside_kdtree = 2**4
 # kd-tree takes up about 1.5 GB (or less) and since the computation 
 # is done on chunks, there is no worry of running out of RAM memory at least
 # for computing pixel-ccd matches. However, this does mean the computation
-# is done in 16 = (2^11/2^9) chunks, which will add to overhead (due to, for 
-# example, file I/O).
+# is done in 16 = (2^11/2^9) chunks, which will add to overhead. 
+# If the number of matches grows by another factor of 10, say, because more 
+# data was taken then that translates to 7 GB of memory just for indices!
+# That would require saving the matched indices into files, out of RAM,
+# which my current implementation does not do.
 
 # Quantities of interests: For any quantity that the user is interested in, 
 # user must specify a list of tuples (one per quantity) as in the following example.

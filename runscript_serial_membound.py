@@ -163,11 +163,44 @@ print("\n")
 # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
 #	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
 #	The output is idx_pix, idx_ccd that gives indices of all matches.
+#   The computation is performed in chunks with each chunk having hp.nside2npix(Nside)
+#   number of pixels, so as to reduce memory requirement. The first chunk
+#   is use to construct ccd kdTree (using the astropy function) which caches
+#   the tree for the remaining chunks. 
 print("4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees")
 print("Computing ccd to pix mapping based on their ra/dec's. (kD-tree)")
 start = time.time()
-# We make c_pix the first argument because we want the mapping to be sorted by it.
-idx_pix, idx_ccd, _, _ = search_around_sky(c_pix, c_ccd, seplimit=sepdeg*u.degree) 
+num_pix_kdtree = hp.nside2npix(Nside_kdtree)
+
+# Dividing the work in chunk
+nchunks = int(num_pix/num_pix_kdtree)
+print("Number of chunks: %d"%nchunks)
+
+idx_pix_list = []
+idx_ccd_list = []
+for i in range(nchunks):
+    start_time_chunk = time.time()
+    chunk_start = i*num_pix_kdtree # Start index 
+    chunk_end = (i+1)*num_pix_kdtree # End index
+
+    if i == 0:
+        # We make c_pix the first argument because we want the mapping to be sorted by it.
+        idx_pix_temp, idx_ccd_temp, _, _ = search_around_sky(c_pix[chunk_start:chunk_end], c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
+    else:
+        # We make c_pix the first argument because we want the mapping to be sorted by it.
+        idx_pix_temp, idx_ccd_temp, _, _ = search_around_sky(c_pix[chunk_start:chunk_end], c_ccd, seplimit=sepdeg*u.degree)
+
+    # Append the temp variables to the lists.
+    idx_pix_list.append(idx_pix_temp)
+    idx_ccd_list.append(idx_ccd_temp)
+
+    # This may not work if there are chunks with no matches at all.
+    print("Computing chunk %d. Time took %.3E sec"%(i, time.time()-start_time_chunk))
+
+# Concatenating the chunks (which are NOT saved in files.)
+idx_pix = np.concatenate(idx_pix_list)
+idx_ccd = np.concatenate(idx_ccd_list)
+
 dt4 = time.time()-start 
 print("Finished. Time took: %.3E sec\n" %(dt4))
 print("In the remainder, work with only pixels that have matching ccd frames.")
