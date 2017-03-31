@@ -188,6 +188,21 @@ idx_pix, idx_ccd, _, _ = search_around_sky(c_pix, c_ccd, seplimit=sepdeg*u.degre
 
 dt4 = time.time()-start 
 print("Finished. Time took: %.3E sec\n" %(dt4))
+
+# If the number of matches is zeros, then exit the program.
+if idx_pix.size == 0:
+    print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
+    print("Total # HEALpix pixels: %d" % num_pix_tot)
+    print("# pixels computed: %d"%num_pix)    
+    print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
+    print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
+    print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
+    print("{:<40s}: {:<1.3E} sec".format("Create HEALPix grid", dt3))
+    print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
+    print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
+    print("Skip the rest of the program and exit.")
+    sys.exit()
+
 print("In the remainder, work with only pixels that have matching ccd frames.")
 idx_pix_uniq = np.unique(idx_pix) # Get the uniq set of pixels matchted.
 num_pix_uniq = idx_pix_uniq.size
@@ -342,6 +357,7 @@ print("\n")
 ################################################################################
 # - 7. Report times of various steps.
 print("Total # HEALpix pixels: %d" % num_pix_tot)
+print("# pixels computed: %d"%num_pix)
 print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
 print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
 print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))

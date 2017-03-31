@@ -5,7 +5,7 @@
 faddress = "../data/ccd/ccds-annotated-decals.fits" 
 
 # Output directory
-out_directory = "./"
+out_directory = "./outputs"
 
 # Search radius range for each HEALPix center.
 # WARNING: Ideall, this number should not be changed.
