@@ -65,6 +65,8 @@ from multiprocessing import Pool
 from functions import *
 # read in configuration file
 from config_run_per_chunk import *
+# For reading in command line args
+import sys
 
 
 
@@ -80,6 +82,7 @@ dt1 = time.time()-start
 # chunk to compute.
 chunk_start = sys.argv[1]
 chunk_end = sys.argv[2]
+print(chunk_start, chunk_end)
 print("Finished. Time elapsed: %.3E sec\n"% (dt1))
 print("\n")
 
