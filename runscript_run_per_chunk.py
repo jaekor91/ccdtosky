@@ -82,6 +82,13 @@ dt1 = time.time()-start
 # chunk to compute.
 chunk_start = int(sys.argv[1])
 chunk_end = int(sys.argv[2])
+num_pix_tot = hp.nside2npix(Nside)
+# If the chunk_end exceeds the bound, then set it the last possible value.
+if chunk_end > num_pix_tot:
+    chunk_end = num_pix_tot
+# If start is greater than end, then abort.
+if chunk_end <= chunk_start:
+    raise Exception("Error: Chunk start index is greater than end index.")
 print("Finished. Time elapsed: %.3E sec\n"% (dt1))
 print("\n")
 
@@ -132,7 +139,7 @@ num_ccd_used = np.sum(ibool)
 print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 
 # Overwritting data_ccd variable so as to use only the unmasked data.
-data_ccd = data_ccd[:][ibool]
+data_ccd = data_ccd[ibool]
 
 # The centers of ccd
 # print("\n")
@@ -151,8 +158,9 @@ print("\n")
 print("3. Create HEALPix grid")
 start = time.time()
 print("Nside chosen: %d"% Nside)
-num_pix = hp.nside2npix(Nside)
-print("Total # HEALPix pixels: %d"%num_pix)
+print("Total # HEALPix pixels: %d"%hp.nside2npix(Nside))
+num_pix = -(chunk_start-chunk_end) 
+print("# pixels computed: %d"%num_pix)
 print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
 ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(chunk_start, chunk_end), nest=NESTED, lonlat=True)) # lonlat=True, must.
 print("HEALPix pixels ra/dec computed.")
@@ -193,63 +201,63 @@ print("\n")
 
 
 
-# ################################################################################	
-# # - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
-# #	from here on), find a set of ccds that it actually belongs to. This can 
-# #	be done efficiently in cartesian represntation of ra/dec's as described 
-# #	in the code below. The cartesian represntation is pre-computed. 
-# print("5. Trim the list of matches")
-# print("5a: Loading ra/dec bounding corners and covert them (and pixel ra/dec) to xyz on unit sphere.")
-# start = time.time()
+################################################################################	
+# - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
+#	from here on), find a set of ccds that it actually belongs to. This can 
+#	be done efficiently in cartesian represntation of ra/dec's as described 
+#	in the code below. The cartesian represntation is pre-computed. 
+print("5. Trim the list of matches")
+print("5a: Loading ra/dec bounding corners and covert them (and pixel ra/dec) to xyz on unit sphere.")
+start = time.time()
 
-# # Load ra/dec of ccd bounding corners.
-# ra0, ra1, ra2, ra3, dec0, dec1, dec2, dec3 = load_radec_corners(data_ccd)
+# Load ra/dec of ccd bounding corners.
+ra0, ra1, ra2, ra3, dec0, dec1, dec2, dec3 = load_radec_corners(data_ccd)
 
-# # Convert ra/dec to xyz vectors
-# xyz0_ccd = radec2xyz(ra0,dec0)
-# xyz1_ccd = radec2xyz(ra1,dec1)
-# xyz2_ccd = radec2xyz(ra2,dec2)
-# xyz3_ccd = radec2xyz(ra3,dec3)
+# Convert ra/dec to xyz vectors
+xyz0_ccd = radec2xyz(ra0,dec0)
+xyz1_ccd = radec2xyz(ra1,dec1)
+xyz2_ccd = radec2xyz(ra2,dec2)
+xyz3_ccd = radec2xyz(ra3,dec3)
 
-# # Compute the normal vectors. The idea here is that given four normal vectors that 
-# # are the results of cross-producting (xyz1,xyz0), (0,3), (3,2), (2,1) in that order, 
-# # we can simply dot prodcut with normal vectors represented by healpix center.
-# # The subtraction is done for numerically stability. Members of n0_ccd-n_pix 
-# # are quite similar.
-# n0_ccd  = np.cross(xyz1_ccd-xyz0_ccd, xyz0_ccd)
-# n1_ccd  = np.cross(xyz0_ccd-xyz3_ccd, xyz3_ccd)
-# n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
-# n3_ccd  = np.cross(xyz2_ccd-xyz1_ccd, xyz1_ccd)
+# Compute the normal vectors. The idea here is that given four normal vectors that 
+# are the results of cross-producting (xyz1,xyz0), (0,3), (3,2), (2,1) in that order, 
+# we can simply dot prodcut with normal vectors represented by healpix center.
+# The subtraction is done for numerically stability. Members of n0_ccd-n_pix 
+# are quite similar.
+n0_ccd  = np.cross(xyz1_ccd-xyz0_ccd, xyz0_ccd)
+n1_ccd  = np.cross(xyz0_ccd-xyz3_ccd, xyz3_ccd)
+n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
+n3_ccd  = np.cross(xyz2_ccd-xyz1_ccd, xyz1_ccd)
 
-# # Create x,y,z vector version of healpix centers.
-# xyz_pix = np.asarray(c_pix.cartesian.xyz).T
-# dt5a = time.time()-start
-# print("Finished. Time elapsed: %.3E sec\n"% (dt5a))
+# Create x,y,z vector version of healpix centers.
+xyz_pix = np.asarray(c_pix.cartesian.xyz).T
+dt5a = time.time()-start
+print("Finished. Time elapsed: %.3E sec\n"% (dt5a))
 
-# # Vectorized version. 
-# print("5b. Trimming ccd to pix mapping to only pairs where pix center resides inside the matching ccd.")
-# start = time.time()
+# Vectorized version. 
+print("5b. Trimming ccd to pix mapping to only pairs where pix center resides inside the matching ccd.")
+start = time.time()
 
-# # Get xyz vector of healpix center
-# n_pix = xyz_pix[idx_pix]
+# Get xyz vector of healpix center
+n_pix = xyz_pix[idx_pix]
 
-# # Test whether the pixel center is within each of the matched CCD
-# ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
-#                                vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
-#                                vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
-#                                vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
+# Test whether the pixel center is within each of the matched CCD
+ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
+                               vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
+                               vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
+                               vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
 
-# # Trimming the mapping.
-# idx_pix_inside = idx_pix[ibool]
-# idx_ccd_inside = idx_ccd[ibool]
-# dt5b = time.time()-start
-# print("Finished. Time elapsed: %.3E sec\n"% (dt5b))
+# Trimming the mapping.
+idx_pix_inside = idx_pix[ibool]
+idx_ccd_inside = idx_ccd[ibool]
+dt5b = time.time()-start
+print("Finished. Time elapsed: %.3E sec\n"% (dt5b))
 
-# print("From here on work with pixels that were found to be in at least one ccd.")
-# idx_pix_inside_uniq = np.unique(idx_pix_inside)
-# num_pix_inside_uniq = idx_pix_inside_uniq.size
-# print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
-# print("\n")
+print("From here on work with pixels that were found to be in at least one ccd.")
+idx_pix_inside_uniq = np.unique(idx_pix_inside)
+num_pix_inside_uniq = idx_pix_inside_uniq.size
+print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
+print("\n")
 
 
 
@@ -335,10 +343,12 @@ print("\n")
 
 
 
-# ################################################################################
-# # - 7. Report times of various steps.
-# print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
-# print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
+################################################################################
+# - 7. Report times of various steps.
+print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
+print("Total # HEALpix pixels: %d" % num_pix_tot)
+print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
+print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
 # print("{:<40s}: {:<1.3E} sec".format("Create HEALPix grid", dt3))
 # print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
 # print("{:<40s}: {:<1.3E} sec".format("Pre-compute xyz coordinates", dt5a))
