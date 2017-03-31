@@ -17,7 +17,7 @@ out_directory = "./"
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**6 # Recommend 2**11 for accurate computation. 
+Nside = 2**11 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -37,8 +37,10 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 # 14 -  3,221,225,472     0.0000128             165      0.0003        0.031
 # Use Nside = 2^11. Pixel size is about 1 percent of the ccd size.
 
-# Number of pixels in each unit before matching to ccd_centers. 
-Nside_kdtree = 2**4
+# Number of pixels in each unit before matching to ccd_centers. (Slows down
+# the computation by ~2 but reduces memory requirement.)
+Nside_kdtree = 2**9
+# WARNING: Must be in powers of 2.
 # A guide on the choice of Nside_kdtree:
 # The expected number of matches between the ccd centers and pixel centers 
 # can be estimated as follows: DESI covers about the third of the sky, so 
@@ -48,28 +50,32 @@ Nside_kdtree = 2**4
 # average. (For DR3, num_ccd_avg ~6.) Putting the two figures together 
 # this means we expect about (num_pix * num_ccd_avg/3.) matches between ccds
 # and the pixels. As an example, for DR3 with Nside = 2^11 case, we would 
-# expect 54M = (50M * 6 * 0.18) matches. That's 108 MB of memory for numpy arrays
+# expect 54M = (50M * 6 * 0.18) matches. That's 432 MB of memory for numpy arrays
 # for match indices. For the compelete DESI imaging survey, we would instead
 # expect (as an upper bound) 330M = (50M * 20 * 1/3.) matches. That translates
-# to almost 1 GB of memory! Also, the kd-tree algorithm that the program implements
+# to almost 2.8 GB of memory. More importantly, the kd-tree algorithm that the program implements
 # requires RAM memory that grows proportinate to the number of input pixels.
-# For DR3, Nside = 2^11 case, the requirement is 6GB! So to be conservative
+# For DR3, Nside = 2^11 case, the requirement is over 15GB! So to be conservative
 # in memory requirement, we opt to divide the computation into several units 
 # with each unit containing hp.nside2npix(Nside_kdtree) pixels. In Nside = 2^9 case, 
-# kd-tree takes up about 1.5 GB (or less) and since the computation 
+# kd-tree takes up about 3 GB (or less) and since the computation 
 # is done on chunks, there is no worry of running out of RAM memory at least
 # for computing pixel-ccd matches. However, this does mean the computation
-# is done in 16 = (2^11/2^9) chunks, which will add to overhead (due to, for 
-# example, file I/O).
+# is done in 16 = (2^11/2^9) chunks, which will add to overhead. 
+# If the number of matches grows by another factor of 10, say, because more 
+# data was taken then that translates to 28 GB of memory just for indices!
+# That would require saving the matched indices into files, out of RAM,
+# which my current implementation does not do.
 
 # Quantities of interests: For any quantity that the user is interested in, 
 # user must specify a list of tuples (one per quantity) as in the following example.
-templates = [("Nexp","none", "sum"),
-             ("airmass","galdepth_ivar", "min"),
-             ("airmass","none", "mean"),             
-             ("airmass","galdepth_ivar", "mean"),
-             ("ebv","galdepth_ivar", "mean"),
-             ("seeing","galdepth_ivar", "mean"),
+templates = [
+			 # ("Nexp","none", "sum"),
+             # ("airmass","galdepth_ivar", "min"),
+             # ("airmass","none", "mean"),             
+             # ("airmass","galdepth_ivar", "mean"),
+             # ("ebv","galdepth_ivar", "mean"),
+             # ("seeing",	"galdepth_ivar", "mean"),
              ("avsky","galdepth_ivar", "mean")]
 
 # More generally,
