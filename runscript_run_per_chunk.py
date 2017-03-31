@@ -43,6 +43,7 @@
 #
 # - Plots: Currently not supported.
 #
+<<<<<<< HEAD
 # TODO: When the program runs, first check whether the inputs are reasonable.
 # TODO: What to do with galdepth or psfdepth with zero? Or if the values don't make sense?
 # TODO: If the user specifies a silly template operation, then print WARNING and sometimes abort.
@@ -67,6 +68,7 @@ from functions import *
 from config_run_per_chunk import *
 # For reading in command line args
 import sys
+
 
 
 
