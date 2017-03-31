@@ -17,7 +17,7 @@ out_directory = "./"
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**11 # Recommend 2**11 for accurate computation. 
+Nside = 2**9 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -39,7 +39,7 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 
 # Number of pixels in each unit before matching to ccd_centers. (Slows down
 # the computation by ~2 but reduces memory requirement.)
-Nside_kdtree = 2**9
+Nside_kdtree = 2**7
 # WARNING: Must be in powers of 2.
 # A guide on the choice of Nside_kdtree:
 # The expected number of matches between the ccd centers and pixel centers 

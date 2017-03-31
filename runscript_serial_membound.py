@@ -25,7 +25,7 @@
 # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
 #	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
 #	The output is idx_pix, idx_ccd that gives indices of all matches.
-# 	`
+# 	
 # - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
 #	from here on), find a set of ccds that it actually belongs to. This can 
 #	be done efficiently in cartesian represntation of ra/dec's as described 

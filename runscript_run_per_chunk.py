@@ -63,7 +63,7 @@ from multiprocessing import Pool
 # module of ccdtosky
 from functions import *
 # read in configuration file
-from config_serial_membound import *
+from config_run_per_chunk import *
 
 
 
