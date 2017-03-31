@@ -17,7 +17,7 @@ out_directory = "./"
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**9 # Recommend 2**11 for accurate computation. 
+Nside = 2**7 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -37,7 +37,8 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 # 14 -  3,221,225,472     0.0000128             165      0.0003        0.031
 # Use Nside = 2^11. Pixel size is about 1 percent of the ccd size.
 
-# Number of pixels in each unit before matching to ccd_centers. 
+# Number of pixels in each unit before matching to ccd_centers. (Slows down
+# the computation by ~2 but reduces memory requirement.)
 Nside_kdtree = 2**7
 # WARNING: Must be in powers of 2.
 # A guide on the choice of Nside_kdtree:
@@ -68,12 +69,13 @@ Nside_kdtree = 2**7
 
 # Quantities of interests: For any quantity that the user is interested in, 
 # user must specify a list of tuples (one per quantity) as in the following example.
-templates = [("Nexp","none", "sum"),
-             ("airmass","galdepth_ivar", "min"),
-             ("airmass","none", "mean"),             
-             ("airmass","galdepth_ivar", "mean"),
-             ("ebv","galdepth_ivar", "mean"),
-             ("seeing","galdepth_ivar", "mean"),
+templates = [
+			 # ("Nexp","none", "sum"),
+             # ("airmass","galdepth_ivar", "min"),
+             # ("airmass","none", "mean"),             
+             # ("airmass","galdepth_ivar", "mean"),
+             # ("ebv","galdepth_ivar", "mean"),
+             # ("seeing",	"galdepth_ivar", "mean"),
              ("avsky","galdepth_ivar", "mean")]
 
 # More generally,
