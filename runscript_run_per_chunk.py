@@ -88,7 +88,9 @@ if chunk_end > num_pix_tot:
     chunk_end = num_pix_tot
 # If start is greater than end, then abort.
 if chunk_end <= chunk_start:
-    raise Exception("Error: Chunk start index is greater than end index.")
+    print("Error: Chunk start index is greater than end index.")
+    print("Exiting the sysmtem.")
+    sys.exit()
 print("Finished. Time elapsed: %.3E sec\n"% (dt1))
 print("\n")
 
@@ -281,9 +283,10 @@ rec_dtype = gen_rec_dtype(templates)
 num_col = 3*len(templates)+3
 output_arr = np.recarray((num_pix_inside_uniq,),dtype=rec_dtype)
 
-# Overwrite for the HEALPix portion.
-output_arr["hpix_idx"] = idx_pix_inside_uniq
-output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq,nest=True,lonlat=True)
+# Overwrite for the HEALPix portion. Note the addition of chunk_start in order to
+# correct for the offset introduced in Step 4.
+output_arr["hpix_idx"] = idx_pix_inside_uniq+chunk_start
+output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq+chunk_start,nest=True,lonlat=True)
 
 # Filter types
 filter_types = ["g","r","z"]
@@ -369,7 +372,7 @@ print("{:<40s}: {:<1.3E} sec".format("Compute the statistics", dt6))
 print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
 print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
-
+print("################################################################################\n\n\n")
 
 
 
