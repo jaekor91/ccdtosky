@@ -80,140 +80,116 @@ start = time.time()
 dt1 = time.time()-start
 # Take the command line inputs for start and end indices for the HEALPix pixel
 # chunk to compute.
-chunk_start = sys.argv[1]
-chunk_end = sys.argv[2]
-print(chunk_start, chunk_end)
+chunk_start = int(sys.argv[1])
+chunk_end = int(sys.argv[2])
 print("Finished. Time elapsed: %.3E sec\n"% (dt1))
 print("\n")
 
 
 
-# ################################################################################
-# # - 2. Load ccd data: Load the ccd summary file located in the dirctory
-# #	specified in the config file. Mask out rows according to the conditions.
-# #	This part is possibly subject to review. Extract the columns the user is 
-# # 	interested and preprocess them according to the rules specified in the 
-# #	functions.py. Return trimmed ccd data and in particular its ra/dec.
-# print("2. Load ccd data")
-# start = time.time()
-# data_ccd= load_ccd_data(faddress)
-# num_ccds_total = data_ccd.size
-# print("ccd file loaded is loaded from %s." % faddress)
-# print("Total # ccds in the summary file: {:>,d}".format(num_ccds_total))
+################################################################################
+# - 2. Load ccd data: Load the ccd summary file located in the dirctory
+#	specified in the config file. Mask out rows according to the conditions.
+#	This part is possibly subject to review. Extract the columns the user is 
+# 	interested and preprocess them according to the rules specified in the 
+#	functions.py. Return trimmed ccd data and in particular its ra/dec.
+print("2. Load ccd data")
+start = time.time()
+data_ccd= load_ccd_data(faddress)
+num_ccds_total = data_ccd.size
+print("ccd file loaded is loaded from %s." % faddress)
+print("Total # ccds in the summary file: {:>,d}".format(num_ccds_total))
 
-# # In the following, select rows corresponding to ccd frames that were used in data reduction.
-# # There are three possible conditions that would exclude a particular ccd:
-# # 1) "photometric"
-# # 2) "blacklist"
-# # 3) "goodregion"
-# # Of the three, I found that only "photometric" and "good region" condition imposes any restriction.
-# # To make the matter simple, for now, I throw away any frames that do not pass all three conditions.
+# In the following, select rows corresponding to ccd frames that were used in data reduction.
+# There are three possible conditions that would exclude a particular ccd:
+# 1) "photometric"
+# 2) "blacklist"
+# 3) "goodregion"
+# Of the three, I found that only "photometric" and "good region" condition imposes any restriction.
+# To make the matter simple, for now, I throw away any frames that do not pass all three conditions.
 
-# # Compute the number of frames with various conditions. (Code intentionally verbose for readability.)
-# iphoto = data_ccd["photometric"]==True
-# iblacklist_ok = data_ccd["blacklist_ok"]==True
-# igood_region = np.sum(data_ccd["good_region"],axis=-1)==-4
+# Compute the number of frames with various conditions. (Code intentionally verbose for readability.)
+iphoto = data_ccd["photometric"]==True
+iblacklist_ok = data_ccd["blacklist_ok"]==True
+igood_region = np.sum(data_ccd["good_region"],axis=-1)==-4
 
-# num_ccd_photo = np.sum(iphoto)
-# num_ccd_blacklist_ok = np.sum(iblacklist_ok)
-# num_ccd_good_region = np.sum(igood_region)
+num_ccd_photo = np.sum(iphoto)
+num_ccd_blacklist_ok = np.sum(iblacklist_ok)
+num_ccd_good_region = np.sum(igood_region)
 
-# # Report the computed numbers above.
-# print("Masking ccd frames with poor conditions.")
-# print("# ccds with \"photometric\" bad: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total- \
-#             num_ccd_photo,(num_ccds_total-num_ccd_photo)/num_ccds_total * 100))
-# print("# ccds blacklisted: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total- \
-#             num_ccd_blacklist_ok,(num_ccds_total-num_ccd_blacklist_ok)/num_ccds_total * 100))
-# print("# ccds only partially good: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total- \
-#             num_ccd_good_region,(num_ccds_total-num_ccd_good_region)/num_ccds_total * 100))
+# Report the computed numbers above.
+print("Masking ccd frames with poor conditions.")
+print("# ccds with \"photometric\" bad: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total- \
+            num_ccd_photo,(num_ccds_total-num_ccd_photo)/num_ccds_total * 100))
+print("# ccds blacklisted: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total- \
+            num_ccd_blacklist_ok,(num_ccds_total-num_ccd_blacklist_ok)/num_ccds_total * 100))
+print("# ccds only partially good: {:>,d} ({:2.2f} pcnt)".format(num_ccds_total- \
+            num_ccd_good_region,(num_ccds_total-num_ccd_good_region)/num_ccds_total * 100))
 
-# # Boolean vector for the intersection of the three conditions.
-# ibool = np.logical_and.reduce((iphoto, iblacklist_ok, igood_region))
-# num_ccd_used = np.sum(ibool)
-# print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
+# Boolean vector for the intersection of the three conditions.
+ibool = np.logical_and.reduce((iphoto, iblacklist_ok, igood_region))
+num_ccd_used = np.sum(ibool)
+print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
 
-# # Overwritting data_ccd variable so as to use only the unmasked data.
-# data_ccd = data_ccd[:][ibool]
+# Overwritting data_ccd variable so as to use only the unmasked data.
+data_ccd = data_ccd[:][ibool]
 
-# # The centers of ccd
-# # print("\n")
-# ra_ccd, dec_ccd = load_radec_center(data_ccd)
-# print("ccd ra/dec centers loaded.")
-# dt2 = time.time()-start
-# print("Finished. Time elapsed: %.3E sec\n"% (dt2))
+# The centers of ccd
 # print("\n")
+ra_ccd, dec_ccd = load_radec_center(data_ccd)
+print("ccd ra/dec centers loaded.")
+dt2 = time.time()-start
+print("Finished. Time elapsed: %.3E sec\n"% (dt2))
+print("\n")
 
 
 
-# ################################################################################
-# # - 3. Create HEALPix grid: Using Nside specified by the user generate HEALPix
-# # 	grid with nest=NESTED, lonlat=True. Default Nside = 2^11 is recommended
-# #	for speed and accuracy of statistics computed for each pixel.
-# print("3. Create HEALPix grid")
-# start = time.time()
-# print("Nside chosen: %d"% Nside)
-# num_pix = hp.nside2npix(Nside)
-# print("# HEALPix pixels: %d"%num_pix)
-# ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(num_pix), nest=NESTED, lonlat=True)) # lonlat=True, must.
-# print("HEALPix pixels ra/dec computed.")
+################################################################################
+# - 3. Create HEALPix grid: Using Nside specified by the user generate HEALPix
+# 	grid with nest=NESTED, lonlat=True. Default Nside = 2^11 is recommended
+#	for speed and accuracy of statistics computed for each pixel.
+print("3. Create HEALPix grid")
+start = time.time()
+print("Nside chosen: %d"% Nside)
+num_pix = hp.nside2npix(Nside)
+print("Total # HEALPix pixels: %d"%num_pix)
+print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
+ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(chunk_start, chunk_end), nest=NESTED, lonlat=True)) # lonlat=True, must.
+print("HEALPix pixels ra/dec computed.")
 
-# ### For each healpix pixel position, finding ccd centers.
-# c_pix = SkyCoord(ra=ra_pix*u.degree, dec=dec_pix*u.degree)
-# c_ccd = SkyCoord(ra=ra_ccd*u.degree, dec=dec_ccd*u.degree)
-# print("Astropy SkyCoord objs for ccd and pix ra/dec created.")
-# dt3 = time.time()-start
-# print("Finished. Time elapsed: %.3E sec\n"% (dt3))
-# print("\n")
+### For each healpix pixel position, finding ccd centers.
+c_pix = SkyCoord(ra=ra_pix*u.degree, dec=dec_pix*u.degree)
+c_ccd = SkyCoord(ra=ra_ccd*u.degree, dec=dec_ccd*u.degree)
+print("Astropy SkyCoord objs for ccd and pix ra/dec created.")
+dt3 = time.time()-start
+print("Finished. Time elapsed: %.3E sec\n"% (dt3))
+print("\n")
 
 
 
-# ################################################################################
-# # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
-# #	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
-# #	The output is idx_pix, idx_ccd that gives indices of all matches.
-# #   The computation is performed in chunks with each chunk having hp.nside2npix(Nside)
-# #   number of pixels, so as to reduce memory requirement. The first chunk
-# #   is use to construct ccd kdTree (using the astropy function) which caches
-# #   the tree for the remaining chunks. 
-# print("4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees")
-# print("Computing ccd to pix mapping based on their ra/dec's. (kD-tree)")
-# start = time.time()
-# num_pix_kdtree = hp.nside2npix(Nside_kdtree)
+################################################################################
+# - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
+#	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
+#	The output is idx_pix, idx_ccd that gives indices of all matches.
+#   The computation is performed in chunks with each chunk having hp.nside2npix(Nside)
+#   number of pixels, so as to reduce memory requirement. The first chunk
+#   is use to construct ccd kdTree (using the astropy function) which caches
+#   the tree for the remaining chunks. 
+print("4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees")
+print("Computing ccd to pix mapping based on their ra/dec's. (kD-tree)")
+start = time.time()
 
-# # Dividing the work in chunk
-# nchunks = int(num_pix/num_pix_kdtree)
-# print("Number of chunks: %d"%nchunks)
+# We make c_pix the first argument because we want the mapping to be sorted by it.
+idx_pix, idx_ccd, _, _ = search_around_sky(c_pix[chunk_start:chunk_end], c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
 
-# idx_pix_list = []
-# idx_ccd_list = []
-# for i in range(nchunks):
-#     start_time_chunk = time.time()
-#     chunk_start = i*num_pix_kdtree # Start index 
-#     chunk_end = (i+1)*num_pix_kdtree # End index
-
-#     # We make c_pix the first argument because we want the mapping to be sorted by it.
-#     idx_pix_temp, idx_ccd_temp, _, _ = search_around_sky(c_pix[chunk_start:chunk_end], c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
-
-#     # Append the temp variables to the lists, if the size is nonzero.
-#     if idx_pix_temp.size > 0: 
-#         idx_pix_list.append(idx_pix_temp+chunk_start)
-#         idx_ccd_list.append(idx_ccd_temp)
-
-#     # This may not work if there are chunks with no matches at all.
-#     print("Computing chunk %d. Time took %.3E sec"%(i, time.time()-start_time_chunk))
-
-# # Concatenating the chunks (which are NOT saved in files.)
-# idx_pix = np.concatenate(idx_pix_list)
-# idx_ccd = np.concatenate(idx_ccd_list)
-
-# dt4 = time.time()-start 
-# print("Finished. Time took: %.3E sec\n" %(dt4))
-# print("In the remainder, work with only pixels that have matching ccd frames.")
-# idx_pix_uniq = np.unique(idx_pix) # Get the uniq set of pixels matchted.
-# num_pix_uniq = idx_pix_uniq.size
-# print("# pix that overlaps with imaged regions: %d (%2.2f pcnt)" %(num_pix_uniq, num_pix_uniq/num_pix*100))
-# print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
-# print("\n")
+dt4 = time.time()-start 
+print("Finished. Time took: %.3E sec\n" %(dt4))
+print("In the remainder, work with only pixels that have matching ccd frames.")
+idx_pix_uniq = np.unique(idx_pix) # Get the uniq set of pixels matchted.
+num_pix_uniq = idx_pix_uniq.size
+print("# pix that overlaps with imaged regions: %d (%2.2f pcnt)" %(num_pix_uniq, num_pix_uniq/num_pix*100))
+print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
+print("\n")
 
 
 
