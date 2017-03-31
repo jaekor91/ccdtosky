@@ -63,7 +63,7 @@ from multiprocessing import Pool
 # module of ccdtosky
 from functions import *
 # read in configuration file
-from config import *
+from config_serial_membound import *
 
 
 
@@ -179,160 +179,160 @@ print("\n")
 
 
 
-################################################################################	
-# - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
-#	from here on), find a set of ccds that it actually belongs to. This can 
-#	be done efficiently in cartesian represntation of ra/dec's as described 
-#	in the code below. The cartesian represntation is pre-computed. 
-print("5. Trim the list of matches")
-print("5a: Loading ra/dec bounding corners and covert them (and pixel ra/dec) to xyz on unit sphere.")
-start = time.time()
+# ################################################################################	
+# # - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
+# #	from here on), find a set of ccds that it actually belongs to. This can 
+# #	be done efficiently in cartesian represntation of ra/dec's as described 
+# #	in the code below. The cartesian represntation is pre-computed. 
+# print("5. Trim the list of matches")
+# print("5a: Loading ra/dec bounding corners and covert them (and pixel ra/dec) to xyz on unit sphere.")
+# start = time.time()
 
-# Load ra/dec of ccd bounding corners.
-ra0, ra1, ra2, ra3, dec0, dec1, dec2, dec3 = load_radec_corners(data_ccd)
+# # Load ra/dec of ccd bounding corners.
+# ra0, ra1, ra2, ra3, dec0, dec1, dec2, dec3 = load_radec_corners(data_ccd)
 
-# Convert ra/dec to xyz vectors
-xyz0_ccd = radec2xyz(ra0,dec0)
-xyz1_ccd = radec2xyz(ra1,dec1)
-xyz2_ccd = radec2xyz(ra2,dec2)
-xyz3_ccd = radec2xyz(ra3,dec3)
+# # Convert ra/dec to xyz vectors
+# xyz0_ccd = radec2xyz(ra0,dec0)
+# xyz1_ccd = radec2xyz(ra1,dec1)
+# xyz2_ccd = radec2xyz(ra2,dec2)
+# xyz3_ccd = radec2xyz(ra3,dec3)
 
-# Compute the normal vectors. The idea here is that given four normal vectors that 
-# are the results of cross-producting (xyz1,xyz0), (0,3), (3,2), (2,1) in that order, 
-# we can simply dot prodcut with normal vectors represented by healpix center.
-# The subtraction is done for numerically stability. Members of n0_ccd-n_pix 
-# are quite similar.
-n0_ccd  = np.cross(xyz1_ccd-xyz0_ccd, xyz0_ccd)
-n1_ccd  = np.cross(xyz0_ccd-xyz3_ccd, xyz3_ccd)
-n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
-n3_ccd  = np.cross(xyz2_ccd-xyz1_ccd, xyz1_ccd)
+# # Compute the normal vectors. The idea here is that given four normal vectors that 
+# # are the results of cross-producting (xyz1,xyz0), (0,3), (3,2), (2,1) in that order, 
+# # we can simply dot prodcut with normal vectors represented by healpix center.
+# # The subtraction is done for numerically stability. Members of n0_ccd-n_pix 
+# # are quite similar.
+# n0_ccd  = np.cross(xyz1_ccd-xyz0_ccd, xyz0_ccd)
+# n1_ccd  = np.cross(xyz0_ccd-xyz3_ccd, xyz3_ccd)
+# n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
+# n3_ccd  = np.cross(xyz2_ccd-xyz1_ccd, xyz1_ccd)
 
-# Create x,y,z vector version of healpix centers.
-xyz_pix = np.asarray(c_pix.cartesian.xyz).T
-dt5a = time.time()-start
-print("Finished. Time elapsed: %.3E sec\n"% (dt5a))
+# # Create x,y,z vector version of healpix centers.
+# xyz_pix = np.asarray(c_pix.cartesian.xyz).T
+# dt5a = time.time()-start
+# print("Finished. Time elapsed: %.3E sec\n"% (dt5a))
 
-# Vectorized version. 
-print("5b. Trimming ccd to pix mapping to only pairs where pix center resides inside the matching ccd.")
-start = time.time()
+# # Vectorized version. 
+# print("5b. Trimming ccd to pix mapping to only pairs where pix center resides inside the matching ccd.")
+# start = time.time()
 
-# Get xyz vector of healpix center
-n_pix = xyz_pix[idx_pix]
+# # Get xyz vector of healpix center
+# n_pix = xyz_pix[idx_pix]
 
-# Test whether the pixel center is within each of the matched CCD
-ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
-                               vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
+# # Test whether the pixel center is within each of the matched CCD
+# ibool = np.logical_and.reduce((vectorized_dot(n0_ccd[idx_ccd],n_pix)>0, 
+#                                vectorized_dot(n1_ccd[idx_ccd],n_pix)>0, 
+#                                vectorized_dot(n2_ccd[idx_ccd],n_pix)>0, 
+#                                vectorized_dot(n3_ccd[idx_ccd],n_pix)>0))
 
-# Trimming the mapping.
-idx_pix_inside = idx_pix[ibool]
-idx_ccd_inside = idx_ccd[ibool]
-dt5b = time.time()-start
-print("Finished. Time elapsed: %.3E sec\n"% (dt5b))
+# # Trimming the mapping.
+# idx_pix_inside = idx_pix[ibool]
+# idx_ccd_inside = idx_ccd[ibool]
+# dt5b = time.time()-start
+# print("Finished. Time elapsed: %.3E sec\n"% (dt5b))
 
-print("From here on work with pixels that were found to be in at least one ccd.")
-idx_pix_inside_uniq = np.unique(idx_pix_inside)
-num_pix_inside_uniq = idx_pix_inside_uniq.size
-print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
-print("\n")
-
-
-
-################################################################################
-# - 6. Compute the stats: See above.
-print("6. Compute the stats")
-print("Allocate memory for the output array.")
-# Create the output recarray as a placeholder.
-rec_dtype = gen_rec_dtype(templates)
-num_col = 3*len(templates)+3
-output_arr = np.recarray((num_pix_inside_uniq,),dtype=rec_dtype)
-
-# Overwrite for the HEALPix portion.
-output_arr["hpix_idx"] = idx_pix_inside_uniq
-output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq,nest=True,lonlat=True)
-
-# Filter types
-filter_types = ["g","r","z"]
-
-# Before proceeding, if any of the templates specified "weight" = "galdepth_ivar", then compute the quanity.
-for e in templates:
-    if e[1]=="galdepth_ivar":
-        print("Compute galdepth_ivar.")
-        galdepth_ivar = fluxlim2ivar(mag2flux(data_ccd["galdepth"]))
-        break
-
-# Import ccd_filter
-ccd_filter = data_ccd["filter"]
-
-# Look-up dictionary for efficient assigning of numbers after computation.
-eb_dict = template_filter_dict(templates, filter_types)
+# print("From here on work with pixels that were found to be in at least one ccd.")
+# idx_pix_inside_uniq = np.unique(idx_pix_inside)
+# num_pix_inside_uniq = idx_pix_inside_uniq.size
+# print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
+# print("\n")
 
 
-# Version: Using scipy binned_statistic
-print("Start computing statistics.")
-start = time.time()
 
-# For each filter
-for b in filter_types:
-    print("Computation for %s-band quantities started."%b)	
-    # Create a band mask
-    i_b = data_ccd["filter"][idx_ccd_inside]==b
+# ################################################################################
+# # - 6. Compute the stats: See above.
+# print("6. Compute the stats")
+# print("Allocate memory for the output array.")
+# # Create the output recarray as a placeholder.
+# rec_dtype = gen_rec_dtype(templates)
+# num_col = 3*len(templates)+3
+# output_arr = np.recarray((num_pix_inside_uniq,),dtype=rec_dtype)
 
-    # Sum of galdepth_ivar per bin
-    # For galdepth_ivar average:
-    hist_denom_galdepth_ivar, _, _ = stats.binned_statistic(idx_pix_inside[i_b], galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+# # Overwrite for the HEALPix portion.
+# output_arr["hpix_idx"] = idx_pix_inside_uniq
+# output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq,nest=True,lonlat=True)
 
-    # For each quantity requsted
-    for e in templates:
-        start_e = time.time()
-        if (e[1] == "none") or (e[2] in ["min", "max", "median"]): 
-            # If the weight scheme is none or any of the above functions were chosen.
-            weight = False
-        else:
-            weight = True
+# # Filter types
+# filter_types = ["g","r","z"]
+
+# # Before proceeding, if any of the templates specified "weight" = "galdepth_ivar", then compute the quanity.
+# for e in templates:
+#     if e[1]=="galdepth_ivar":
+#         print("Compute galdepth_ivar.")
+#         galdepth_ivar = fluxlim2ivar(mag2flux(data_ccd["galdepth"]))
+#         break
+
+# # Import ccd_filter
+# ccd_filter = data_ccd["filter"]
+
+# # Look-up dictionary for efficient assigning of numbers after computation.
+# eb_dict = template_filter_dict(templates, filter_types)
+
+
+# # Version: Using scipy binned_statistic
+# print("Start computing statistics.")
+# start = time.time()
+
+# # For each filter
+# for b in filter_types:
+#     print("Computation for %s-band quantities started."%b)	
+#     # Create a band mask
+#     i_b = data_ccd["filter"][idx_ccd_inside]==b
+
+#     # Sum of galdepth_ivar per bin
+#     # For galdepth_ivar average:
+#     hist_denom_galdepth_ivar, _, _ = stats.binned_statistic(idx_pix_inside[i_b], galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+
+#     # For each quantity requsted
+#     for e in templates:
+#         start_e = time.time()
+#         if (e[1] == "none") or (e[2] in ["min", "max", "median"]): 
+#             # If the weight scheme is none or any of the above functions were chosen.
+#             weight = False
+#         else:
+#             weight = True
         
-        # If the quantity requested is Nexp
-        if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
-            hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], np.ones_like([idx_ccd_inside[i_b]]), statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))            
-            output_arr[eb_dict[(e,b)]] = hist_num[0][idx_pix_inside_uniq]            
-        else:
-            # If the operation asked for is mean
-            if e[2] == "mean": 
-                if weight: # weight is true, apply the weights when computing the average.
-                    hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
-                    output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
-                else: # weight is FALSE, then just use "mean" option. 
-                    hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = "mean", bins=np.arange(-0.5, num_pix+1.5, 1))
-                    output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
-            # For all other operations.
-            else:
-                hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = e[2], bins=np.arange(-0.5, num_pix+1.5, 1))
-                output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
-        print(("Quantity: %s, Time taken: {:<1.3E} sec"%eb_dict[(e,b)]).format(time.time()-start_e))
-    print("Computation for %s-band quantities ended.\n"%b)    
+#         # If the quantity requested is Nexp
+#         if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
+#             hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], np.ones_like([idx_ccd_inside[i_b]]), statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))            
+#             output_arr[eb_dict[(e,b)]] = hist_num[0][idx_pix_inside_uniq]            
+#         else:
+#             # If the operation asked for is mean
+#             if e[2] == "mean": 
+#                 if weight: # weight is true, apply the weights when computing the average.
+#                     hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+#                     output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
+#                 else: # weight is FALSE, then just use "mean" option. 
+#                     hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = "mean", bins=np.arange(-0.5, num_pix+1.5, 1))
+#                     output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+#             # For all other operations.
+#             else:
+#                 hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = e[2], bins=np.arange(-0.5, num_pix+1.5, 1))
+#                 output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+#         print(("Quantity: %s, Time taken: {:<1.3E} sec"%eb_dict[(e,b)]).format(time.time()-start_e))
+#     print("Computation for %s-band quantities ended.\n"%b)    
                 
-dt6 = time.time()-start
-print("Finished. Time elapsed: %.3E sec"% (dt6))
-# At the moment, saved in numpy binary file.
-np.save("".join([out_directory, "output_arr"]), output_arr, allow_pickle=False)
-print("output_arr is saved in %s." % out_directory)
-print("\n")
+# dt6 = time.time()-start
+# print("Finished. Time elapsed: %.3E sec"% (dt6))
+# # At the moment, saved in numpy binary file.
+# np.save("".join([out_directory, "output_arr"]), output_arr, allow_pickle=False)
+# print("output_arr is saved in %s." % out_directory)
+# print("\n")
 
 
 
-################################################################################
-# - 7. Report times of various steps.
-print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
-print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
-print("{:<40s}: {:<1.3E} sec".format("Create HEALPix grid", dt3))
-print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
-print("{:<40s}: {:<1.3E} sec".format("Pre-compute xyz coordinates", dt5a))
-print("{:<40s}: {:<1.3E} sec".format("Trim the spherematch list", dt5b))
-print("{:<40s}: {:<1.3E} sec".format("Compute the statistics", dt6))
-print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
-print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
-print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
+# ################################################################################
+# # - 7. Report times of various steps.
+# print("{:<40s}: {:<1.3E} sec".format("Check config file", dt1))
+# print("{:<40s}: {:<1.3E} sec".format("Load CCD data", dt2))
+# print("{:<40s}: {:<1.3E} sec".format("Create HEALPix grid", dt3))
+# print("{:<40s}: {:<1.3E} sec".format("Spherematch pixels to ccd centers", dt4))
+# print("{:<40s}: {:<1.3E} sec".format("Pre-compute xyz coordinates", dt5a))
+# print("{:<40s}: {:<1.3E} sec".format("Trim the spherematch list", dt5b))
+# print("{:<40s}: {:<1.3E} sec".format("Compute the statistics", dt6))
+# print("# ccds USED after masking: {:>,d} ({:2.2f} pcnt)".format(num_ccd_used,(num_ccd_used)/num_ccds_total * 100))
+# print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix_uniq,num_pix_inside_uniq))
+# print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
 
 
 
