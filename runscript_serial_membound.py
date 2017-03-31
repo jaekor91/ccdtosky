@@ -186,9 +186,10 @@ for i in range(nchunks):
     # We make c_pix the first argument because we want the mapping to be sorted by it.
     idx_pix_temp, idx_ccd_temp, _, _ = search_around_sky(c_pix[chunk_start:chunk_end], c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
 
-    # Append the temp variables to the lists.
-    idx_pix_list.append(idx_pix_temp)
-    idx_ccd_list.append(idx_ccd_temp)
+    # Append the temp variables to the lists, if the size is nonzero.
+    if idx_pix_temp.size > 0: 
+        idx_pix_list.append(idx_pix_temp+chunk_start)
+        idx_ccd_list.append(idx_ccd_temp)
 
     # This may not work if there are chunks with no matches at all.
     print("Computing chunk %d. Time took %.3E sec"%(i, time.time()-start_time_chunk))
