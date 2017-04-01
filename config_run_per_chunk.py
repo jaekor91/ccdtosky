@@ -7,12 +7,16 @@ faddress = "../data/ccd/ccds-annotated-decals.fits"
 # Output directory
 out_directory = "./outputs/"
 
+# Use spherematchDJE code to perform spherematching. A lot faster than astropy
+# routine.
+DJE = True
+
 # Search radius range for each HEALPix center.
 # WARNING: Ideall, this number should not be changed.
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**11 # Recommend 2**11 for accurate computation. 
+Nside = 2**11# Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
