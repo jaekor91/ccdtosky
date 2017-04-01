@@ -85,26 +85,32 @@ int get_one_object(FILE *fp, double pos[3]) {
 }
 
 /* ============= Read the second input file to find matches ======= */
+void writeint(int v, FILE *f) {
+  fwrite((void*)(&v), sizeof(v), 1, f);
+}
 
-void FindMatches(SMX smx, char filename[], double match_radius, double min_radius) {
+void FindMatches(SMX smx, char filename[], char outfile[] , double match_radius, double min_radius) {
     FILE *fp;
+    FILE *fp_out; // Output file pointer.
     if (strcmp(filename,"-")) {
-	printf("# Searching for neighbors from %s\n", filename);
-	fp = fopen(filename,"rb"); // File is a binary file.
-	assert(fp!=NULL);
+		// printf("# Searching for neighbors from %s\n", filename); 
+		fp = fopen(filename,"rb"); // File is a binary file.
+		assert(fp!=NULL);
     } else {
-	printf("# Searching for neighbors from stdin\n");
+		// printf("# Searching for neighbors from stdin\n");
         fp = stdin;
     }
+
+    fp_out = fopen(outfile, "wb"); // Opening file to write binary int32 output.
 
     double pos[3], r2 = match_radius*match_radius;
     double min_radius2 = min_radius*min_radius;
     if (min_radius<0) min_radius2 = -1.0;   // This will never fail
 
     int id=0, npair=0;
-    printf("# Using radius %lf, min %lf\n", match_radius, min_radius);
-    if (global_auto) 
-    	printf("# Auto-correlation: requiring ID1<ID2 (and no-self-matches)\n");
+    // printf("# Using radius %lf, min %lf\n", match_radius, min_radius);
+    // if (global_auto) 
+    	// printf("# Auto-correlation: requiring ID1<ID2 (and no-self-matches)\n");
 
     while (get_one_object(fp,pos)) {
 	int nSmooth = smBallGather(smx,r2,pos);
@@ -116,13 +122,17 @@ void FindMatches(SMX smx, char filename[], double match_radius, double min_radiu
 	    	// Omit the duplicate copy
 	    
 	    npair++;
-	    printf("%d %d %lf\n", p->iOrder, id, sqrt(smx->fList[j]));
+	    // Writing out the integer to files.
+	    writeint(p->iOrder,fp_out);
+	    writeint(id,fp_out);
+	    // printf("%d %d %lf\n", p->iOrder, id, sqrt(smx->fList[j])); Only indices.
 	    // printf("  %lf %lf %lf   %lf %lf %lf\n", pos[0], pos[1], pos[2], p->r[0], p->r[1], p->r[2]);
 	}
 	id++;
     }
-    printf("# Searched %d neighbors, found %d pairs\n", id, npair);
+    // printf("# Searched %d neighbors, found %d pairs\n", id, npair);
     fclose(fp);
+    fclose(fp_out);
 }
 
 /* ====================  Read the first input file and put it in KD ========= */
@@ -138,7 +148,7 @@ int kdReadFile(KD kd,char infile[])
 	while (get_one_object(fp,pos)) {
 	    kd->nActive++;
 	}
-	printf("# Expect %d objects from file %s\n", kd->nActive, infile);
+	// printf("# Expect %d objects from file %s\n", kd->nActive, infile);
 	rewind(fp);
 	fflush(NULL);
 
@@ -158,7 +168,7 @@ int kdReadFile(KD kd,char infile[])
 	    ++nCnt;
 	}
 	assert(nCnt==kd->nActive);
-	printf("# Read %d objects from file %s\n", kd->nActive, infile);
+	// printf("# Read %d objects from file %s\n", kd->nActive, infile);
 
 	/*
 	 ** Calculate Bounds.
@@ -207,6 +217,7 @@ int main(int argc,char **argv)
 	KD kd;
 	SMX smx;
 	FILE *fp;
+	FILE *fp_out; // pointer for the output file.
 	double fPeriod[3];
 	for (int j=0;j<3;++j) fPeriod[j] = HUGE;
 	char infile1[200], infile2[200], outfile[200];
@@ -277,13 +288,13 @@ int main(int argc,char **argv)
         if (!(strcmp(infile1,""))||!(strcmp(infile2,""))) 
 	    usage("Must supply two input files names.");
 
-	if (strcmp(outfile,"")) {
-	    freopen(outfile,"w",stdout);
-	}
+	// if (strcmp(outfile,"")) {
+	//     freopen(outfile,"wb",stdout); 
+	// } Disabled this. 
 	if (global_angular) {
-	    printf("# Doing an angular match on the sphere in arcsec\n");
+	    // printf("# Doing an angular match on the sphere in arcsec\n");
 	} else { 
-	    printf("# Doing a 3-d match in user-supplied units\n");
+	    // printf("# Doing a 3-d match in user-supplied units\n");
 	}
 
 	kdInit(&kd,nBucket);
@@ -291,7 +302,7 @@ int main(int argc,char **argv)
 	kdBuildTree(kd);
 	smInit(&smx,kd,maxMatch,fPeriod);
 
-	FindMatches(smx,infile2,match_radius,min_radius);
+	FindMatches(smx,infile2,outfile,match_radius,min_radius);
 
 	// kdOrder(kd);
 	smFinish(smx);
