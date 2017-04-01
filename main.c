@@ -58,6 +58,7 @@ int readradec(FILE *fp, double radec[2]) {
 
 int get_one_object(FILE *fp, double pos[3]) {
     double radec[2];
+    double ra, dec;
 
     while (readradec(fp,radec)) {
 	if (global_angular) {
@@ -72,8 +73,8 @@ int get_one_object(FILE *fp, double pos[3]) {
 	    pos[2] = ARCSEC*sin(dec);
 	    // We use a sphere of radius 3600*180/PI so that the angular unit is arcsec
 	} else {
-		printf("spherematchDJE modification only works for -ang.")
-		exit()
+		printf("spherematchDJE modification only works for -ang.");
+		exit(0);
 	    // int nread = sscanf(line,"%lf %lf %lf", pos, pos+1, pos+2);
 	    // assert(nread==3);
 	}
