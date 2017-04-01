@@ -45,15 +45,24 @@ int global_auto;   // ==1 if this is a auto-count and should require id1<id2
 
 #define ARCSEC (3600.0*180.0/M_PI)
 
-int get_one_object(FILE *fp, double pos[3]) {
-    char line[200];
-    while (fgets(line,200,fp)!=NULL) {
-        if (line[0]=='#') continue;
+int readradec(FILE *fp, double radec[2]) {
+	double v;
+  	if (fread(radec, sizeof(v), 1, fp)){
+  		fread(radec+1, sizeof(v), 1, fp); 
+  		return 1;
+  	}
+  	else{
+  		return 0;
+  	}
+}
 
+int get_one_object(FILE *fp, double pos[3]) {
+    double radec[2];
+
+    while (readradec(fp,radec)) {
 	if (global_angular) {
-	    double ra, dec;
-	    int nread = sscanf(line,"%lf %lf", &ra, &dec);
-	    assert(nread==2);
+		ra = radec[0];
+		dec = radec[1];
 	    assert(dec<90.00000001&&dec>-90.0000001);
 	    // We don't assert on RA because it might be useful to wrap the sphere.
 	    ra *= M_PI/180.0;
@@ -63,8 +72,10 @@ int get_one_object(FILE *fp, double pos[3]) {
 	    pos[2] = ARCSEC*sin(dec);
 	    // We use a sphere of radius 3600*180/PI so that the angular unit is arcsec
 	} else {
-	    int nread = sscanf(line,"%lf %lf %lf", pos, pos+1, pos+2);
-	    assert(nread==3);
+		printf("spherematchDJE modification only works for -ang.")
+		exit()
+	    // int nread = sscanf(line,"%lf %lf %lf", pos, pos+1, pos+2);
+	    // assert(nread==3);
 	}
 
 	return 1;
@@ -78,7 +89,7 @@ void FindMatches(SMX smx, char filename[], double match_radius, double min_radiu
     FILE *fp;
     if (strcmp(filename,"-")) {
 	printf("# Searching for neighbors from %s\n", filename);
-	fp = fopen(filename,"r");
+	fp = fopen(filename,"rb"); // File is a binary file.
 	assert(fp!=NULL);
     } else {
 	printf("# Searching for neighbors from stdin\n");
@@ -117,8 +128,8 @@ void FindMatches(SMX smx, char filename[], double match_radius, double min_radiu
 
 int kdReadFile(KD kd,char infile[])
 {
-	FILE *fp = fopen(infile,"r");
-	assert(fp!=NULL);
+	FILE *fp = fopen(infile,"rb"); // The input file is now a binary file. 
+	assert(fp!=NULL); // See if file is empty.
 	double pos[3];
 
 	/* Count particles in input file */
