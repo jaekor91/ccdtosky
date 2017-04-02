@@ -7,6 +7,12 @@ faddress = "../data/ccd/ccds-annotated-decals.fits"
 # Output directory
 out_directory = "./outputs/"
 
+# Numba number of threads.
+num_thread = "1"
+# Must be a str. Python binned statistic function is defined with numba jit 
+# decorator with nogil=True, meaning that the function may gain performance
+# with a greater number of threads.
+
 # Use spherematchDJE code to perform spherematching. A lot faster than astropy
 # routine.
 DJE = True
@@ -19,7 +25,7 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**11 # Recommend 2**11 for accurate computation. 
+Nside = 2**2 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -44,11 +50,12 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 templates = [
 			 # ("Nexp","none", "sum"),
              # ("airmass","galdepth_ivar", "min"),
-             # ("airmass","none", "mean"),             
+             ("airmass","none", "mean"),             
              # ("airmass","galdepth_ivar", "mean"),
              # ("ebv","galdepth_ivar", "mean"),
              # ("seeing",	"galdepth_ivar", "mean"),
-             ("avsky","galdepth_ivar", "mean")]
+             # ("avsky","galdepth_ivar", "mean")
+             ]
 
 # More generally,
 #
@@ -76,10 +83,3 @@ templates = [
 # Note that the output quantity is computed for each band seperately ("g", "r" and "z"). 
 # The output recarray will have 3*n+3 columns, where n is the number of quantities specified. 
 # The array contains HEALPix pixels and the corresponding ra/dec's.
-
-
-
-
-
-
-
