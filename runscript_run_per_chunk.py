@@ -28,9 +28,9 @@
 #	for speed and accuracy of statistics computed for each pixel.
 #
 # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
-#	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
-#	The output is idx_pix, idx_ccd that gives indices of all matches.
-# 	`
+#	size of the diagonal of ccd frame. The output is idx_pix, idx_ccd that gives 
+#   indices of all matches.
+# 	
 # - 5. Trim the list of matches: For each HEALPix pixel (referred to as pixel 
 #	from here on), find a set of ccds that it actually belongs to. This can 
 #	be done efficiently in cartesian represntation of ra/dec's as described 
@@ -68,7 +68,8 @@ from functions import *
 from config_run_per_chunk import *
 # For reading in command line args
 import sys
-
+# For running spherematchDJE
+from subprocess import call
 
 
 
@@ -169,10 +170,6 @@ print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
 ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(chunk_start, chunk_end), nest=NESTED, lonlat=True)) # lonlat=True, must.
 print("HEALPix pixels ra/dec computed.")
 
-### For each healpix pixel position, finding ccd centers.
-c_pix = SkyCoord(ra=ra_pix*u.degree, dec=dec_pix*u.degree)
-c_ccd = SkyCoord(ra=ra_ccd*u.degree, dec=dec_ccd*u.degree)
-print("Astropy SkyCoord objs for ccd and pix ra/dec created.")
 dt3 = time.time()-start
 print("Finished. Time elapsed: %.3E sec\n"% (dt3))
 print("\n")
@@ -181,16 +178,53 @@ print("\n")
 
 ################################################################################
 # - 4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees, half the
-#	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky.
+#	size of the diagonal of ccd frame. Use astropy.coordinates.search_around_sky
+#   or DJE algorithm.
 #	The output is idx_pix, idx_ccd that gives indices of all matches.
 print("4. Spherematch HEALPix centers to ccd centers within 0.336/2 degrees")
 print("Computing ccd to pix mapping based on their ra/dec's. (kD-tree)")
 start = time.time()
+if DJE: # If the user wants to use DJE algorithm.
+    print("Using spherematchDJE algorithm.")
+    # Write ra,dec of ccd and pix out into binary files.
+    print("Binary write out for ccd.")
+    start_write = time.time()
+    pairs_ccd = np.array([ra_ccd,dec_ccd]).T
+    pairs_ccd.astype(np.float64).tofile("radec_ccd_asdfg.bin")
+    dt4_w1 = time.time()-start_write
+    print("Finished. Time took: %.3E sec\n" %(dt4_w1))
 
-# We make c_pix the first argument because we want the mapping to be sorted by it.
-idx_pix, idx_ccd, _, _ = search_around_sky(c_pix, c_ccd, seplimit=sepdeg*u.degree, storekdtree='kdtree_sky')
+    print("Binary write out for pixels.")
+    start_write = time.time()
+    pairs_pix = np.array([ra_pix,dec_pix]).T 
+    pairs_pix.astype(np.float64).tofile("radec_pix_asdfg.bin")
+    dt4_w2 = time.time()-start_write
+    print("Finished. Time took: %.3E sec\n" %(dt4_w2))
 
-dt4 = time.time()-start 
+    print("Running spherematchDJE code.")
+    start_DJE = time.time()
+    call(["./spherematchDJE", "radec_ccd_asdfg.bin", "radec_pix_asdfg.bin", "-ang", "-r", str(sepdeg*3600), "-o", "idx12_asdfg.bin"])
+    dt4_DJE = time.time()-start_DJE
+    print("Finished. Time took: %.3E sec\n" %(dt4_DJE))
+
+    print("Reading in the matched indices")
+    start_read = time.time()
+    with open("idx12_asdfg.bin", 'rb') as f:
+        data_bin = np.fromfile(f, dtype=np.int32)
+        num_rows = int(data_bin.size/2)
+        data_bin = np.reshape(data_bin, [num_rows,2])
+        idx_pix, idx_ccd = data_bin[:,1], data_bin[:,0]
+    dt4_idx = time.time()-start_read
+    print("Finished. Time took: %.3E sec\n" %(dt4_idx))
+else: # If not use astropy solution.
+    print("Using astropy.")
+    c_pix = SkyCoord(ra=ra_pix*u.degree, dec=dec_pix*u.degree)
+    c_ccd = SkyCoord(ra=ra_ccd*u.degree, dec=dec_ccd*u.degree)
+    print("Astropy SkyCoord objs for ccd and pix ra/dec created.")
+    # We make c_pix the first argument because we want the mapping to be sorted by it.
+    idx_pix, idx_ccd, _, _ = search_around_sky(c_pix, c_ccd, seplimit=sepdeg*u.degree) 
+# Report time
+dt4 = time.time()-start
 print("Finished. Time took: %.3E sec\n" %(dt4))
 
 # If the number of matches is zeros, then exit the program.
@@ -245,7 +279,7 @@ n2_ccd  = np.cross(xyz3_ccd-xyz2_ccd, xyz2_ccd)
 n3_ccd  = np.cross(xyz2_ccd-xyz1_ccd, xyz1_ccd)
 
 # Create x,y,z vector version of healpix centers.
-xyz_pix = np.asarray(c_pix.cartesian.xyz).T
+xyz_pix = radec2xyz(ra_pix, dec_pix)
 dt5a = time.time()-start
 print("Finished. Time elapsed: %.3E sec\n"% (dt5a))
 
