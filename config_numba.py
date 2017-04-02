@@ -7,7 +7,11 @@ faddress = "../data/ccd/ccds-annotated-decals.fits"
 # Output directory
 out_directory = "./outputs/"
 
-# Numba number of threads.
+# If True, use numba optimized function in step 6. Otherwise, use 
+# scipy.stats.binned_statistic
+use_numba = False
+
+# Numba number of threads. Irrelevant if use_numba = False. 
 num_thread = "1"
 # Must be a str. Python binned statistic function is defined with numba jit 
 # decorator with nogil=True, meaning that the function may gain performance
