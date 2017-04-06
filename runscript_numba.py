@@ -450,7 +450,7 @@ if use_numba:
         i_b = data_ccd["filter"][idx_ccd_inside]==b
 
         # Unique indices for particular 
-        print(idx_pix_inside[i_b])
+        # print(idx_pix_inside[i_b])
         idx_ccd_inside_b = np.array(idx_ccd_inside[i_b]).astype(np.int32)
         idx_pix_inside_b = np.array(idx_pix_inside[i_b]).astype(np.int32)
 
@@ -540,9 +540,9 @@ else:
                 
 dt6 = time.time()-start
 print("Finished. Time elapsed: %.3E sec"% (dt6))
-# # At the moment, saved in numpy binary file.
-# np.save("".join([out_directory, "output_arr_chunk%dthru%d"%(chunk_start, chunk_end)]), output_arr, allow_pickle=False)
-# print("output_arr is saved in %s." % out_directory)
+# At the moment, saved in numpy binary file.
+np.save("".join([out_directory, "output_arr_chunk%dthru%d"%(chunk_start, chunk_end)]), output_arr, allow_pickle=False)
+print("output_arr is saved in %s." % out_directory)
 print("\n")
 
 
@@ -564,7 +564,6 @@ print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix
 print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
 print("################################################################################\n\n\n")
 
-print(output_arr[-10:])
 
 
 
