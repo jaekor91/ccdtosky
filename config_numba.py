@@ -29,7 +29,7 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**1 # Recommend 2**11 for accurate computation. 
+Nside = 2**8 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -53,12 +53,13 @@ NESTED = True # Use nested HEALPix division by default for histogramming.
 # user must specify a list of tuples (one per quantity) as in the following example.
 templates = [
 			 # ("Nexp","none", "sum"),
-             # ("airmass","galdepth_ivar", "min"),
+             # ("airmass","galdepth_ivar", "max"),
+             ("airmass","galdepth_ivar", "min")            
              # ("airmass","none", "mean"),             
              # ("airmass","galdepth_ivar", "mean"),
              # ("ebv","galdepth_ivar", "mean"),
              # ("seeing",	"galdepth_ivar", "mean"),
-             ("avsky","galdepth_ivar", "mean")
+             # ("avsky","galdepth_ivar", "mean")
              ]
 
 # More generally,

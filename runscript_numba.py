@@ -382,9 +382,64 @@ if use_numba:
             weighted_histogram[idxes[i]] += weights[i]
         return weighted_histogram
 
-    # Min function
-
     # Max function
+    @nb.jit
+    def max_binned_1d(idxes, values, idx_max):
+        """
+        Given the two inputs, return an array of idx_max+1 length
+        with each bin containing the maximum value.
+
+        Requirement: idxes has to be sorted and must be integer type.
+        All values must be positive.
+        """
+        # Placeholder for weighted histogram
+        max_binned = np.zeros(idx_max+1)
+
+        # For each element in the index
+        bin_idx = 0
+        bin_max = -np.inf
+        for i in range(idxes.size):
+            current_idx = idxes[i]
+            current_val = values[i]
+            if bin_idx == current_idx:
+                if current_val > bin_max:
+                    bin_max = current_val
+            else:
+                max_binned[bin_idx] = bin_max
+                bin_idx = current_idx
+                bin_max = current_val
+        max_binned[bin_idx] = bin_max
+        return max_binned   
+  
+
+    # Min function
+    @nb.jit
+    def min_binned_1d(idxes, values, idx_max):
+        """
+        Given the two inputs, return an array of idx_max+1 length
+        with each bin containing the minimum value.
+
+        Requirement: idxes has to be sorted and must be integer type.
+        All values must be positive.
+        """
+        # Placeholder for weighted histogram
+        min_binned = np.zeros(idx_max+1)
+
+        # For each element in the index
+        bin_idx = 0
+        bin_min = np.inf
+        for i in range(idxes.size):
+            current_idx = idxes[i]
+            current_val = values[i]
+            if bin_idx == current_idx:
+                if current_val < bin_min:
+                    bin_min = current_val
+            else:
+                min_binned[bin_idx] = bin_min
+                bin_idx = current_idx
+                bin_min = current_val
+        min_binned[bin_idx] = bin_min
+        return min_binned    
 
     # Max index for historgramming
     idx_max = np.max(idx_pix_inside_uniq)
@@ -395,8 +450,9 @@ if use_numba:
         i_b = data_ccd["filter"][idx_ccd_inside]==b
 
         # Unique indices for particular 
-        idx_ccd_inside_b = idx_ccd_inside[i_b]
-        idx_pix_inside_b = idx_pix_inside[i_b]
+        print(idx_pix_inside[i_b])
+        idx_ccd_inside_b = np.array(idx_ccd_inside[i_b]).astype(np.int32)
+        idx_pix_inside_b = np.array(idx_pix_inside[i_b]).astype(np.int32)
 
         # Sum of galdepth_ivar per bin
         # For galdepth_ivar average:
@@ -415,7 +471,7 @@ if use_numba:
             # If the quantity requested is Nexp
             if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
                 hist_num = weighted_histogram_1d(idx_pix_inside_b, np.ones(idx_pix_inside_b.size), idx_max)
-                output_arr[eb_dict[(e,b)]] = hist_num[0][idx_pix_inside_uniq]            
+                output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]            
             else:
                 # If the operation asked for is mean
                 if e[2] == "mean": 
@@ -425,10 +481,15 @@ if use_numba:
                     else: # weight is FALSE, then just use "mean" option. 
                         hist_num, _, _= stats.binned_statistic(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b], statistic = "mean", bins=np.arange(-0.5, num_pix+1.5, 1))
                         output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
-                # For all other operations.
-                else:
-                    hist_num, _, _= stats.binned_statistic(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b], statistic = e[2], bins=np.arange(-0.5, num_pix+1.5, 1))
-                    output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+                # If asked for max
+                elif e[2] == "max":
+                    max_binned = max_binned_1d(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b], idx_max)                        
+                    output_arr[eb_dict[(e,b)]] = max_binned[idx_pix_inside_uniq]
+                # If asked for max
+                elif e[2] == "min":
+                    min_binned = min_binned_1d(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b], idx_max)                        
+                    output_arr[eb_dict[(e,b)]] = min_binned[idx_pix_inside_uniq]
+
             print(("Quantity: %s, Time taken: {:<1.3E} sec"%eb_dict[(e,b)]).format(time.time()-start_e))
         print("Computation for %s-band quantities ended.\n"%b)
 else:
@@ -503,7 +564,7 @@ print("Pix # Beginning, # Spherematched, # Inside: %d, %d, %d "%(num_pix,num_pix
 print("Number of matches (length of idx_pix): {:>,d}".format(idx_pix.size))
 print("################################################################################\n\n\n")
 
-print(output_arr)
+print(output_arr[-10:])
 
 
 
