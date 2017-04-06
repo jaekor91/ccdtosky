@@ -29,7 +29,7 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**4 # Recommend 2**11 for accurate computation. 
+Nside = 2**1 # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = True # Use nested HEALPix division by default for histogramming.  
@@ -75,6 +75,7 @@ templates = [
 #				represented by NaN. 
 # 	  - "median": compute the median of values for points within each bin.
 #		 		Empty bins will be represented by NaN. "weight" is ignored.
+#                       Only available for scipy option for the moment.
 # 	  - "min": compute the minimum of values for points within each bin.
 #				 Empty bins will be represented by NaN. "weight" is ignored.
 # 	  - "max": compute the maximum of values for point within each bin. 
