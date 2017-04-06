@@ -37,7 +37,8 @@
 #	in the code below. The cartesian represntation is pre-computed. 
 #
 # - 6. Compute the stats: The statistics specified by the user (e.g. min, max, mean)
-#	are computed via scipy.stats.binned_statistic function.
+#	are computed either via scipy.stats.binned_statistic function or numba
+#   optimized function, depending on the user preference.
 #
 # - 7. Report times for various steps. 
 #
@@ -351,7 +352,49 @@ print("Start computing statistics.")
 start = time.time()
 
 if use_numba:
-    print("Nothing implemented here for now.")
+    # Version: Using numba optimized function. 
+    # - The same frame work as scipy code below, except I use jit-Numba function
+    #   in place of scipy functions.
+    # For each filter
+    for b in filter_types:
+        print("Computation for %s-band quantities started."%b)  
+        # Create a band mask
+        i_b = data_ccd["filter"][idx_ccd_inside]==b
+
+        # Sum of galdepth_ivar per bin
+        # For galdepth_ivar average:
+        if galdepth_ivar != None:
+            hist_denom_galdepth_ivar, _, _ = stats.binned_statistic(idx_pix_inside[i_b], galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+
+        # For each quantity requsted
+        for e in templates:
+            start_e = time.time()
+            if (e[1] == "none") or (e[2] in ["min", "max", "median"]): 
+                # If the weight scheme is none or any of the above functions were chosen.
+                weight = False
+            else:
+                weight = True
+            
+            # If the quantity requested is Nexp
+            if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
+                hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], np.ones_like([idx_ccd_inside[i_b]]), statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))            
+                output_arr[eb_dict[(e,b)]] = hist_num[0][idx_pix_inside_uniq]            
+            else:
+                # If the operation asked for is mean
+                if e[2] == "mean": 
+                    if weight: # weight is true, apply the weights when computing the average.
+                        hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]]*galdepth_ivar[idx_ccd_inside[i_b]], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+                        output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
+                    else: # weight is FALSE, then just use "mean" option. 
+                        hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = "mean", bins=np.arange(-0.5, num_pix+1.5, 1))
+                        output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+                # For all other operations.
+                else:
+                    hist_num, _, _= stats.binned_statistic(idx_pix_inside[i_b], data_ccd[e[0]][idx_ccd_inside[i_b]], statistic = e[2], bins=np.arange(-0.5, num_pix+1.5, 1))
+                    output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+            print(("Quantity: %s, Time taken: {:<1.3E} sec"%eb_dict[(e,b)]).format(time.time()-start_e))
+        print("Computation for %s-band quantities ended.\n"%b)    
+                    
 else:
     # Version: Using scipy binned_statistic
     # For each filter
