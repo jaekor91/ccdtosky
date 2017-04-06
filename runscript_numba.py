@@ -401,7 +401,7 @@ if use_numba:
         # Sum of galdepth_ivar per bin
         # For galdepth_ivar average:
         if galdepth_ivar is not None:
-            hist_denom_galdepth_ivar = weighted_histogram_1d(idx_pix_inside[i_b], galdepth_ivar[idx_ccd_inside[i_b]], idx_max)
+            hist_denom_galdepth_ivar = weighted_histogram_1d(idx_pix_inside_b, galdepth_ivar[idx_ccd_inside[i_b]], idx_max)
 
         # For each quantity requsted
         for e in templates:
@@ -414,13 +414,13 @@ if use_numba:
             
             # If the quantity requested is Nexp
             if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
-                hist_num, _, _= stats.binned_statistic(idx_pix_inside_b, np.ones_like([idx_ccd_inside_b]), statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))            
+                hist_num = weighted_histogram_1d(idx_pix_inside_b, np.ones(idx_pix_inside_b.size), idx_max)
                 output_arr[eb_dict[(e,b)]] = hist_num[0][idx_pix_inside_uniq]            
             else:
                 # If the operation asked for is mean
                 if e[2] == "mean": 
                     if weight: # weight is true, apply the weights when computing the average.
-                        hist_num, _, _= stats.binned_statistic(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b]*galdepth_ivar[idx_ccd_inside_b], statistic = "sum", bins=np.arange(-0.5, num_pix+1.5, 1))
+                        hist_num = weighted_histogram_1d(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b]*galdepth_ivar[idx_ccd_inside_b], idx_max)
                         output_arr[eb_dict[(e,b)]] = (hist_num[idx_pix_inside_uniq]/hist_denom_galdepth_ivar[idx_pix_inside_uniq])  
                     else: # weight is FALSE, then just use "mean" option. 
                         hist_num, _, _= stats.binned_statistic(idx_pix_inside_b, data_ccd[e[0]][idx_ccd_inside_b], statistic = "mean", bins=np.arange(-0.5, num_pix+1.5, 1))
