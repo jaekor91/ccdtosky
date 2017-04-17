@@ -209,7 +209,7 @@ if DJE: # If the user wants to use DJE algorithm.
 
     print("Running spherematchDJE code.")
     start_DJE = time.time()
-    call(["./spherematchDJE", "radec_ccd_asdfg.bin", "radec_pix_asdfg.bin", "-ang", "-r", str(sepdeg*3600), "-o", "idx12_asdfg.bin"])
+    call(["./spherematchDJE", "radec_ccd_asdfg.bin", "radec_pix_asdfg.bin", "-ang", "-r", str(sepdeg*3600), "-o", "idx12_asdfg.bin", "-max", "10000"])
     dt4_DJE = time.time()-start_DJE
     print("Finished. Time took: %.3E sec\n" %(dt4_DJE))
 
