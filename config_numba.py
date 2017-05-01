@@ -2,10 +2,10 @@
 # specified by the user.
 
 # File address for the ccd summary file
-faddress = "../data/ccd/ccds-annotated-combined.fits" 
+faddress = "../data/ccd/ccds-annotated-decals.fits" 
 
 # Output directory
-out_directory = "./outputs/combined_Nside11/"
+out_directory = "./outputs/decals_Nside11/"
 
 # If True, use numba optimized function in step 6. Otherwise, use 
 # scipy.stats.binned_statistic
@@ -29,11 +29,10 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**11 # Recommend 2**11 for accurate computation. 
+Nside = 2**11      # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
-NESTED = True # Use nested HEALPix division by default for histogramming.  
-			# WARNING: Although the program should run correctly when False, do not change.
+NESTED = False # Use nested HEALPix division by default for histogramming.  
 
 # This table is provided for your convenience.
 # Nside 		# Pix  	deg^2 	   arcsec^2   A_p/A_ccd    Targ # per pix

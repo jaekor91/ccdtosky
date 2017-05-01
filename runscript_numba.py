@@ -328,7 +328,7 @@ output_arr = np.recarray((num_pix_inside_uniq,),dtype=rec_dtype)
 # Overwrite for the HEALPix portion. Note the addition of chunk_start in order to
 # correct for the offset introduced in Step 4.
 output_arr["hpix_idx"] = idx_pix_inside_uniq+chunk_start
-output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq+chunk_start,nest=True,lonlat=True)
+output_arr["hpix_ra"],output_arr["hpix_dec"] = hp.pix2ang(Nside,idx_pix_inside_uniq+chunk_start,nest=NESTED,lonlat=True)
 
 # Filter types
 filter_types = ["g","r","z"]
