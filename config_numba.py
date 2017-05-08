@@ -29,7 +29,7 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**11      # Recommend 2**11 for accurate computation. 
+Nside = 2**11    # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = False # Use nested HEALPix division by default for histogramming.  
@@ -61,9 +61,9 @@ templates = [
              ("seeing",	"galdepth_ivar", "max"),
              ("seeing", "galdepth_ivar", "min"),
              ("seeing", "galdepth_ivar", "mean"),             
-             ("ccdskymag","galdepth_ivar", "max"),
-             ("ccdskymag","galdepth_ivar", "min"),
-             ("ccdskymag","galdepth_ivar", "mean")
+             ("galdepth","none", "max"),
+             ("galdepth","none", "min"),
+             ("galdepth","none", "mean")
              ]
 
 # More generally,
