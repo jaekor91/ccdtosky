@@ -471,7 +471,9 @@ if use_numba:
             # If the quantity requested is Nexp
             if (e[0] == "Nexp"): # Nexp is not part of ccd file summary so treated like a special case
                 hist_num = weighted_histogram_1d(idx_pix_inside_b, np.ones(idx_pix_inside_b.size), idx_max)
-                output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]            
+                output_arr[eb_dict[(e,b)]] = hist_num[idx_pix_inside_uniq]
+            elif (e[0] == "galdepth"): # If the user asks for galdepth quantity, depth is determined by 5 sigma signal to noise
+                output_arr[eb_dict[(e,b)]] = 5./np.sqrt(hist_denom_galdepth_ivar[idx_pix_inside_uniq])
             else:
                 # If the operation asked for is mean
                 if e[2] == "mean": 
