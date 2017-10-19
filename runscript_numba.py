@@ -7,7 +7,7 @@
 # used for slicing. See the actual code for the description of the workflow.
 # For higher level explanation of steps, see below.
 # 
-# Use "config_run_per_chunk.py" file as the configuration file.
+# Use "config_numba.py" file as the configuration file.
 # 
 # Given the config file provided by the user, the present script produces the
 # output array of interest. Here is a high-level overview of the program.
