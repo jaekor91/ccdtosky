@@ -12,7 +12,7 @@ out_directory = "./outputs/decals_Nside9/"
 use_numba = True
 
 # Numba number of threads. Irrelevant if use_numba = False. 
-num_thread = "1"
+num_thread = "2"
 # Must be a str. Python binned statistic function is defined with numba jit 
 # decorator with nogil=True, meaning that the function may gain performance
 # with a greater number of threads.
@@ -29,7 +29,7 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**9    # Recommend 2**11 for accurate computation. 
+Nside = 2**7    # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = False # Use nested HEALPix division by default for histogramming.  
