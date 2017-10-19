@@ -63,7 +63,7 @@ from astropy import units as u
 import scipy.stats as stats
 import time
 # module of ccdtosky
-from functions import *
+from utils import *
 # read in configuration file
 from config_numba import *
 # For reading in command line args
@@ -125,7 +125,7 @@ print("Total # ccds in the summary file: {:>,d}".format(num_ccds_total))
 # Of the three, I found that only "photometric" and "good region" condition imposes any restriction.
 # To make the matter simple, for now, I throw away any frames that do not pass all three conditions.
 
-# Compute the number of frames with various conditions. (Code intentionally verbose for readability.)
+# Compute the number of frames with various conditions. (Code intentionally verbose to make cuts explicit.)
 iphoto = data_ccd["photometric"]==True
 iblacklist_ok = data_ccd["blacklist_ok"]==True
 igood_region = np.sum(data_ccd["good_region"],axis=-1)==-4
@@ -169,7 +169,7 @@ print("3. Create HEALPix grid")
 start = time.time()
 print("Nside chosen: %d"% Nside)
 print("Total # HEALPix pixels: %d"%hp.nside2npix(Nside))
-num_pix = -(chunk_start-chunk_end) 
+num_pix = chunk_end-chunk_start
 print("# pixels computed: %d"%num_pix)
 print("Computing chunk [%d, %d]" % (chunk_start, chunk_end))
 ra_pix, dec_pix = np.array(hp.pix2ang(Nside,range(chunk_start, chunk_end), nest=NESTED, lonlat=True)) # lonlat=True, must.
