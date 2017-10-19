@@ -62,7 +62,6 @@ from astropy.coordinates import search_around_sky
 from astropy import units as u
 import scipy.stats as stats
 import time
-from multiprocessing import Pool
 # module of ccdtosky
 from functions import *
 # read in configuration file
