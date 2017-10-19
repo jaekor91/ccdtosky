@@ -2,10 +2,10 @@
 # specified by the user.
 
 # File address for the ccd summary file
-faddress = "../data/ccd/ccds-annotated-decals.fits" 
+faddress = "../data/ccd/ccds-annotated-dr5.fits" 
 
 # Output directory
-out_directory = "./outputs/decals_Nside9/"
+out_directory = "./outputs/DR5/decals_Nside11/"
 
 # If True, use numba optimized function in step 6. Otherwise, use 
 # scipy.stats.binned_statistic
@@ -29,7 +29,7 @@ DJE = True
 sepdeg = 0.336/2. 
 
 # HEALPix parameters
-Nside = 2**7    # Recommend 2**11 for accurate computation. 
+Nside = 2**11    # Recommend 2**11 for accurate computation. 
 			# WARNING: If more than 2**11, then compute time might be excessively long.
             # If less than 2**9, the approximation scheme used may not work as well.
 NESTED = False # Use nested HEALPix division by default for histogramming.  
@@ -51,17 +51,17 @@ NESTED = False # Use nested HEALPix division by default for histogramming.
 # Quantities of interests: For any quantity that the user is interested in, 
 # user must specify a list of tuples (one per quantity) as in the following example.
 templates = [
-             ("Nexp","none", "sum"),
-             ("airmass","galdepth_ivar", "max"),
-             ("airmass","galdepth_ivar", "min"),
-             ("airmass","galdepth_ivar", "mean"),
-             ("ebv","galdepth_ivar", "max"),
-             ("ebv","galdepth_ivar", "min"),
-             ("ebv","galdepth_ivar", "mean"),             
-             ("seeing",	"galdepth_ivar", "max"),
-             ("seeing", "galdepth_ivar", "min"),
-             ("seeing", "galdepth_ivar", "mean"),             
-             ("galdepth","none", "none")
+             ("Nexp","none", "sum")
+             # ("airmass","galdepth_ivar", "max"),
+             # ("airmass","galdepth_ivar", "min"),
+             # ("airmass","galdepth_ivar", "mean"),
+             # ("ebv","galdepth_ivar", "max"),
+             # ("ebv","galdepth_ivar", "min"),
+             # ("ebv","galdepth_ivar", "mean"),             
+             # ("seeing",	"galdepth_ivar", "max"),
+             # ("seeing", "galdepth_ivar", "min"),
+             # ("seeing", "galdepth_ivar", "mean"),             
+             # ("galdepth","none", "none")
              ]
 
 # More generally,
